@@ -27,7 +27,9 @@
 #include "note_frequency.h"
 #include "timer_utils.h"
 #include "input_handler.h"
+#include "DSP_utils.h"
 #include "MY_CS43L22.h"
+#include "filter.h"
 
 /* USER CODE END Includes */
 
@@ -38,8 +40,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define DAC_REF_V_ANALOG 3.25
-#define DAC_REF_V_DIGITAL 0xFFF
+#define REF_V_ANALOG 3.25
+#define REF_V_DIGITAL 0xFFF
 #define N_SAMPLES 255
 #define I2S_SAMPLE_RATE 48000
 #define MAX_SAMPLE_SIZE I2S_SAMPLE_RATE/16.35
@@ -70,9 +72,9 @@ uint32_t sine_wave[N_SAMPLES];
 
 uint32_t square_wave[N_SAMPLES];
 
-uint16_t out_wave[2935];
+uint16_t out_wave[(2*I2S_SAMPLE_RATE)/(uint16_t)NOTE_C0_440HZ];
 
-waveshape_t current_wave_out = SINE;
+waveshape_t current_wave_out = SAWTOOTH;
 bool cycle_waveshape_flag = false;
 
 uint16_t dma_adc_inputs[ADC1_N_CHANNELS];
@@ -82,8 +84,12 @@ bool timer_updated = false;
 note_t nf_map_440hz[N_OCTAVES * N_SEMITONES];
 
 uint16_t debounce_cnt = 0;
-uint16_t debounce_limit = 0xFF;
+uint32_t debounce_limit = 0xFFFF;
 bool debounce_flag = false;
+
+bool filter_flag = false;
+
+bool btn_pressed = false;
 
 /* USER CODE END PV */
 
@@ -91,12 +97,12 @@ bool debounce_flag = false;
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2S2_Init(void);
 static void MX_I2S3_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 void MX_USB_HOST_Process(void);
 
@@ -150,13 +156,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_I2S2_Init();
   MX_I2S3_Init();
   MX_SPI1_Init();
   MX_USB_HOST_Init();
   MX_TIM2_Init();
-  MX_DMA_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
@@ -172,7 +178,7 @@ int main(void)
   key_map_t key_map_adc1[ADC1_N_CHANNELS];
   key_map_set(3, key_map_adc1, nf_map_440hz);
 
-  f = nf_get_f440hz(A, 2, nf_map_440hz);
+  f = nf_get_f440hz(A, 4, nf_map_440hz);
 
   volatile uint16_t dma_adc_key_inputs[16];
 
@@ -180,17 +186,20 @@ int main(void)
 
 //  timer_utils_set_f_wave(&htim2, f, N_SAMPLES);
 
-  wavetable_create_sine(out_wave, DAC_REF_V_DIGITAL, I2S_SAMPLE_RATE/f, 0, 0);
-//  wavetable_i2s_create_sine(out_wave, 440);
+  wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, (2*I2S_SAMPLE_RATE)/f, 1, 0);
 
-//  HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)out_wave, I2S_SAMPLE_RATE/440);
-//  HAL_TIM_Base_Start(&htim2);
+  float C = 3.14E-5;
+  float R1;
 
-//  HAL_StatusTypeDef start_DAC = HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_1, (uint32_t*)out_wave, N_SAMPLES, DAC_ALIGN_12B_R);
+  float fc = 20;
 
-//  HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)out_wave, I2S_SAMPLE_RATE * 440);
+//  float T = 1/(2 * f);
+  float T = 0.0001;
+  R1 = dsp_utils_compute_R_lowpass(fc, C);
 
+  filter_1st_order_lowpass(out_wave, (2*I2S_SAMPLE_RATE)/f, R1, C, T);
 
+  HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)out_wave, (2*I2S_SAMPLE_RATE)/f);
 
   /* USER CODE END 2 */
 
@@ -202,7 +211,6 @@ int main(void)
     MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
-
     if (debounce_flag) {
     	debounce_cnt++;
     	if (debounce_cnt >= debounce_limit) {
@@ -211,11 +219,16 @@ int main(void)
     	}
     }
 
-    HAL_I2S_Transmit(&hi2s3, (uint16_t*)out_wave, I2S_SAMPLE_RATE/f, 100);
+    if (btn_pressed) {
+    	if (filter_flag) filter_1st_order_lowpass(out_wave, (2*I2S_SAMPLE_RATE)/f, R1, C, T);
+    	else wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, (2*I2S_SAMPLE_RATE)/f, 1, 0);
+    	btn_pressed = false;
+    }
 
     if (cycle_waveshape_flag) {
     	current_wave_out = cycle_waveshape(current_wave_out);
-    	wavetable_create(current_wave_out, out_wave, DAC_REF_V_DIGITAL, I2S_SAMPLE_RATE/f, 0, 0);
+    	wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, (2*I2S_SAMPLE_RATE)/f, 1, 0);
+
     	cycle_waveshape_flag = false;
     	debounce_flag = true;
 	  }
@@ -608,6 +621,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PD0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
   /*Configure GPIO pin : OTG_FS_OverCurrent_Pin */
   GPIO_InitStruct.Pin = OTG_FS_OverCurrent_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -632,23 +651,19 @@ static void MX_GPIO_Init(void)
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef* hi2s) {
 	if (hi2s == &hi2s3) {
-//		HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)out_wave, I2S_SAMPLE_RATE/440);
-//		int a = 1;
+//		HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)out_wave, I2S_SAMPLE_RATE/f);
 	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+//	if (GPIO_Pin == GPIO_PIN_0 && debounce_flag == false) {
+//		cycle_waveshape_flag = true;
+//	}
 	if (GPIO_Pin == GPIO_PIN_0 && debounce_flag == false) {
-		cycle_waveshape_flag = true;
+		filter_flag = !filter_flag;
+		btn_pressed = true;
+		debounce_flag = true;
 	}
-//	else if (GPIO_Pin == GPIO_PIN_8) {
-//		f = nf_get_f440hz(A, 4, nf_map_440hz);
-//		timer_updated = true;
-//	}
-//	else if (GPIO_Pin == GPIO_PIN_9) {
-//		f = nf_get_f440hz(B, 8, nf_map_440hz);
-//		timer_updated = true;
-//	}
 }
 
 /* USER CODE END 4 */
