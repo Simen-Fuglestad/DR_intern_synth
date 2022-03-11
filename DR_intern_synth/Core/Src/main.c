@@ -27,7 +27,7 @@
 #include "note_frequency.h"
 #include "timer_utils.h"
 #include "input_handler.h"
-#include "DSP_utils.h"
+//#include "DSP_utils.h"
 #include "MY_CS43L22.h"
 #include "filter.h"
 
@@ -74,7 +74,13 @@ uint32_t square_wave[N_SAMPLES];
 
 uint16_t out_wave[(2*I2S_SAMPLE_RATE)/(uint16_t)NOTE_C0_440HZ];
 
-waveshape_t current_wave_out = SAWTOOTH;
+uint16_t prev_output[(2*I2S_SAMPLE_RATE)/(uint16_t)NOTE_C0_440HZ];
+uint16_t output[1];
+uint16_t out_index = 0;
+
+bool out_full = false;
+
+waveshape_t current_wave_out = SQUARE;
 bool cycle_waveshape_flag = false;
 
 uint16_t dma_adc_inputs[ADC1_N_CHANNELS];
@@ -87,9 +93,28 @@ uint16_t debounce_cnt = 0;
 uint32_t debounce_limit = 0xFFFF;
 bool debounce_flag = false;
 
-bool filter_flag = false;
+bool out_flag = false;
 
 bool btn_pressed = false;
+
+float C1 = 10E-8;
+float R1;
+
+float fc_hp = 1200;
+float fc_lp = 530;
+
+float delta_t;
+
+float ns; //samples per period
+
+semitone_t tone = A;
+uint8_t octave = 4;
+
+filter_t filters[0xFF];
+
+filter_f* filter_functions[0x0F];
+
+float test_R = 5;
 
 /* USER CODE END PV */
 
@@ -121,6 +146,7 @@ waveshape_t cycle_waveshape (waveshape_t wave) {
 	}
 	return wave;
 }
+
 
 /* USER CODE END 0 */
 
@@ -168,38 +194,30 @@ int main(void)
 
   CS43_Init(hi2c1, MODE_I2S);
   CS43_Enable_RightLeft(CS43_RIGHT_LEFT);
-  CS43_SetVolume(1);
+  CS43_SetVolume(50);
   CS43_Start();
 
   timer_utils_init_wavegen_clk();
 
   nf_map_init_440(nf_map_440hz);
 
-  key_map_t key_map_adc1[ADC1_N_CHANNELS];
-  key_map_set(3, key_map_adc1, nf_map_440hz);
+  f = nf_get_f440hz(tone, octave, nf_map_440hz);
+  delta_t = 1.0f/(5*f);
 
-  f = nf_get_f440hz(A, 4, nf_map_440hz);
+  ns = round((2*I2S_SAMPLE_RATE)/f);
 
   volatile uint16_t dma_adc_key_inputs[16];
-
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)dma_adc_inputs, ADC1_N_CHANNELS);
 
-//  timer_utils_set_f_wave(&htim2, f, N_SAMPLES);
+  wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1, 0);
 
-  wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, (2*I2S_SAMPLE_RATE)/f, 1, 0);
+  filter_init_RC_lowpass(&filter_RC_lowpass, delta_t, fc_lp, 1);
 
-  float C = 3.14E-5;
-  float R1;
+  filters[0] = filter_RC_lowpass;
+  filter_functions[0] = filter_RC_lp_get_next;
 
-  float fc = 20;
-
-//  float T = 1/(2 * f);
-  float T = 0.0001;
-  R1 = dsp_utils_compute_R_lowpass(fc, C);
-
-  filter_1st_order_lowpass(out_wave, (2*I2S_SAMPLE_RATE)/f, R1, C, T);
-
-  HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)out_wave, (2*I2S_SAMPLE_RATE)/f);
+  output[0] = out_wave[out_index];
+  HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)output, 1);
 
   /* USER CODE END 2 */
 
@@ -211,6 +229,16 @@ int main(void)
     MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
+
+    if (out_flag) {
+		out_index++;
+		if (out_index >= ns) {
+			out_index = 0;
+		}
+		output[0] = filter_apply_all(filter_functions, filters, out_wave[out_index], 1);
+		out_flag = false;
+    }
+
     if (debounce_flag) {
     	debounce_cnt++;
     	if (debounce_cnt >= debounce_limit) {
@@ -219,18 +247,29 @@ int main(void)
     	}
     }
 
-    if (btn_pressed) {
-    	if (filter_flag) filter_1st_order_lowpass(out_wave, (2*I2S_SAMPLE_RATE)/f, R1, C, T);
-    	else wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, (2*I2S_SAMPLE_RATE)/f, 1, 0);
-    	btn_pressed = false;
-    }
-
     if (cycle_waveshape_flag) {
-    	current_wave_out = cycle_waveshape(current_wave_out);
-    	wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, (2*I2S_SAMPLE_RATE)/f, 1, 0);
-
-    	cycle_waveshape_flag = false;
     	debounce_flag = true;
+    	test_R += 1;
+    	filter_set_R_lp(&filters[0], test_R, 0);
+
+
+//    	if (tone == B) {
+//    		tone = C;
+//    		octave++;
+//    		if (octave > 8) {
+//    			octave = 0;
+//    		}
+//    	} else {
+//    		tone++;
+//    	}
+//
+//    	f = nf_get_f440hz(tone, octave, nf_map_440hz);
+//    	delta_t = 1/(5*f);
+//    	ns = round((2*I2S_SAMPLE_RATE)/f);
+
+//    	current_wave_out = cycle_waveshape(current_wave_out);
+//    	wavetable_create(current_wave_out, /out_wave, REF_V_DIGITAL, ns, 1, 0);
+    	cycle_waveshape_flag = false;
 	  }
   }
   /* USER CODE END 3 */
@@ -651,21 +690,20 @@ static void MX_GPIO_Init(void)
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef* hi2s) {
 	if (hi2s == &hi2s3) {
-//		HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)out_wave, I2S_SAMPLE_RATE/f);
+		out_flag = true;
 	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-//	if (GPIO_Pin == GPIO_PIN_0 && debounce_flag == false) {
-//		cycle_waveshape_flag = true;
-//	}
 	if (GPIO_Pin == GPIO_PIN_0 && debounce_flag == false) {
-		filter_flag = !filter_flag;
-		btn_pressed = true;
-		debounce_flag = true;
+		cycle_waveshape_flag = true;
 	}
+//	if (GPIO_Pin == GPIO_PIN_0 && debounce_flag == false) {
+//		filter_flag = !filter_flag;
+//		btn_pressed = true;
+//		debounce_flag = true;
+//	}
 }
-
 /* USER CODE END 4 */
 
 /**
@@ -699,4 +737,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-

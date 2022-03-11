@@ -8,19 +8,6 @@
 #include "DSP_utils.h"
 #include <math.h>
 
-float dsp_utils_compute_fc_lowpass(float R, float C) {
-	float denom = 2.0f * M_PI * R * C;
-	return 1.0f/(2.0f * M_PI * R * C);
-}
-
-float dsp_utils_compute_R_lowpass(float fc, float C) {
-	return 1.0f/(2 * M_PI * fc * C);
-}
-
-float dsp_utils_compute_C_lowpass(float fc, float R) {
-	return 1.0f/(2 * M_PI * R * fc);
-}
-
 void dsp_utils_set_lp(float fc, uint16_t N, uint16_t* out_wave, uint16_t ref_v) {
 	float filter_coeffs[N];
 	dsp_utils_window_sampling_lp(fc, N, filter_coeffs);
