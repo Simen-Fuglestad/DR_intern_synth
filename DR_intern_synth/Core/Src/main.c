@@ -80,7 +80,7 @@ uint16_t out_index = 0;
 
 bool out_full = false;
 
-waveshape_t current_wave_out = SQUARE;
+waveshape_t current_wave_out = SINE;
 bool cycle_waveshape_flag = false;
 
 uint16_t dma_adc_inputs[ADC1_N_CHANNELS];
@@ -113,8 +113,12 @@ uint8_t octave = 4;
 filter_t filters[0xFF];
 
 filter_f* filter_functions[0x0F];
+filter_t filter_RC_lowpass;
+
 
 float test_R = 5;
+
+
 
 /* USER CODE END PV */
 
@@ -211,10 +215,10 @@ int main(void)
 
   wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1, 0);
 
-  filter_init_RC_lowpass(&filter_RC_lowpass, delta_t, fc_lp, 1);
 
+  filter_lowpass_RC_init(&filter_RC_lowpass, delta_t, fc_lp, 1);
   filters[0] = filter_RC_lowpass;
-  filter_functions[0] = filter_RC_lp_get_next;
+  filter_functions[0] = filter_lowpass_RC_get_next;
 
   output[0] = out_wave[out_index];
   HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)output, 1);
@@ -249,26 +253,26 @@ int main(void)
 
     if (cycle_waveshape_flag) {
     	debounce_flag = true;
-    	test_R += 1;
-    	filter_set_R_lp(&filters[0], test_R, 0);
+//    	test_R += 10;
+//    	filter_set_R_lp(&filters[0], test_R, 0);
 
 
-//    	if (tone == B) {
-//    		tone = C;
-//    		octave++;
-//    		if (octave > 8) {
-//    			octave = 0;
-//    		}
-//    	} else {
-//    		tone++;
-//    	}
-//
-//    	f = nf_get_f440hz(tone, octave, nf_map_440hz);
-//    	delta_t = 1/(5*f);
-//    	ns = round((2*I2S_SAMPLE_RATE)/f);
+    	if (tone == B) {
+    		tone = C;
+    		octave++;
+    		if (octave > 8) {
+    			octave = 0;
+    		}
+    	} else {
+    		tone++;
+    	}
+
+    	f = nf_get_f440hz(tone, octave, nf_map_440hz);
+    	delta_t = 1/(5*f);
+    	ns = round((2*I2S_SAMPLE_RATE)/f);
 
 //    	current_wave_out = cycle_waveshape(current_wave_out);
-//    	wavetable_create(current_wave_out, /out_wave, REF_V_DIGITAL, ns, 1, 0);
+    	wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1, 0);
     	cycle_waveshape_flag = false;
 	  }
   }

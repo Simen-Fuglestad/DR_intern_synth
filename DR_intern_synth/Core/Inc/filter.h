@@ -30,18 +30,22 @@ typedef struct {
 
 typedef uint16_t (filter_f)(filter_t*, uint16_t);
 
-uint16_t filter_RC_lp_get_next(filter_t* filter, uint16_t x);
-
-filter_t filter_RC_lowpass;
-
-void filter_init_RC_lowpass(filter_t* filter, float delta_t, float fc, float gain);
-
-float filter_compute_fc_lp(float R, float C);
-float filter_compute_R(filter_response_t ft, uint8_t order, float fc, float C);
-void filter_set_R_lp(filter_t* filter,  float R, uint8_t ri);
-void filter_set_C_lp(filter_t* filter, float C, uint8_t ci);
-void filter_set_coeffs_lp(filter_t* filter, float delta_t, float R, float C);
 uint16_t filter_apply_all(filter_f** filter_functions, filter_t* filters, uint16_t inp, uint8_t nf);
 
-void filter_set_gain(filter_t filter, float gain);
+
+// Low pass
+
+void filter_lowpass_RC_init(filter_t* filter, float delta_t, float fc, float gain);
+
+uint16_t filter_lowpass_RC_get_next(filter_t* filter, uint16_t x);
+
+void filter_lowpass_RC_set_R(filter_t* filter,  float R, uint8_t ri);
+void filter_lowpass_RC_set_C(filter_t* filter, float C, uint8_t ci);
+void filter_lowpass_RC_set_coeffs(filter_t* filter, float delta_t, float R, float C);
+
+float filter_lowpass_RC_get_fc(filter_t* filter);
+float filter_lowpass_compute_fc(float R, float C);
+float filter_lowpass_compute_R(float fc, float C);
+float filter_lowpass_compute_C(float fc, float R);
+
 #endif /* INC_FILTER_H_ */
