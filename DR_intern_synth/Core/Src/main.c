@@ -80,7 +80,7 @@ uint16_t out_index = 0;
 
 bool out_full = false;
 
-waveshape_t current_wave_out = SINE;
+waveshape_t current_wave_out = TRIANGLE;
 bool cycle_waveshape_flag = false;
 
 uint16_t dma_adc_inputs[ADC1_N_CHANNELS];
@@ -97,10 +97,7 @@ bool out_flag = false;
 
 bool btn_pressed = false;
 
-float C1 = 10E-8;
-float R1;
-
-float fc_hp = 1200;
+float fc_hp = 1;
 float fc_lp = 530;
 
 float delta_t;
@@ -114,10 +111,10 @@ filter_t filters[0xFF];
 
 filter_f* filter_functions[0x0F];
 filter_t filter_RC_lowpass;
+filter_t filter_RC_highpass;
 
 
-float test_R = 5;
-
+float test_R = 2652;
 
 
 /* USER CODE END PV */
@@ -217,8 +214,11 @@ int main(void)
 
 
   filter_lowpass_RC_init(&filter_RC_lowpass, delta_t, fc_lp, 1);
-  filters[0] = filter_RC_lowpass;
-  filter_functions[0] = filter_lowpass_RC_get_next;
+  filter_highpass_RC_init(&filter_RC_highpass, delta_t, fc_hp, 1);
+//  filters[0] = filter_RC_lowpass;
+  filters[0] = filter_RC_highpass;
+//  filter_functions[0] = filter_lowpass_RC_get_next;
+  filter_functions[0] = filter_highpass_RC_get_next;
 
   output[0] = out_wave[out_index];
   HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)output, 1);
@@ -240,6 +240,7 @@ int main(void)
 			out_index = 0;
 		}
 		output[0] = filter_apply_all(filter_functions, filters, out_wave[out_index], 1);
+//		output[0] = out_wave[out_index];
 		out_flag = false;
     }
 
@@ -253,8 +254,9 @@ int main(void)
 
     if (cycle_waveshape_flag) {
     	debounce_flag = true;
-//    	test_R += 10;
-//    	filter_set_R_lp(&filters[0], test_R, 0);
+    	test_R -= 100;
+//    	filter_lowpass_RC_set_R(&filters[0], test_R);
+    	filter_highpass_RC_set_R(&filters[0], test_R);
 
 
     	if (tone == B) {
@@ -267,9 +269,9 @@ int main(void)
     		tone++;
     	}
 
-    	f = nf_get_f440hz(tone, octave, nf_map_440hz);
-    	delta_t = 1/(5*f);
-    	ns = round((2*I2S_SAMPLE_RATE)/f);
+//    	f = nf_get_f440hz(tone, octave, nf_map_440hz);
+//    	delta_t = 1/(5*f);
+//    	ns = round((2*I2S_SAMPLE_RATE)/f);
 
 //    	current_wave_out = cycle_waveshape(current_wave_out);
     	wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1, 0);
