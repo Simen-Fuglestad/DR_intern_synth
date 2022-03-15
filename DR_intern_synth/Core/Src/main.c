@@ -30,6 +30,7 @@
 //#include "DSP_utils.h"
 #include "MY_CS43L22.h"
 #include "filter.h"
+#include "modulator.h"
 
 /* USER CODE END Includes */
 
@@ -43,8 +44,6 @@
 #define REF_V_ANALOG 3.25
 #define REF_V_DIGITAL 0xFFF
 #define N_SAMPLES 255
-#define I2S_SAMPLE_RATE 48000
-#define MAX_SAMPLE_SIZE I2S_SAMPLE_RATE/16.35
 #define ADC1_N_CHANNELS 3 //active channels on adc 1
 /* USER CODE END PD */
 
@@ -72,7 +71,7 @@ uint32_t sine_wave[N_SAMPLES];
 
 uint32_t square_wave[N_SAMPLES];
 
-uint16_t out_wave[(2*I2S_SAMPLE_RATE)/(uint16_t)NOTE_C0_440HZ];
+uint16_t out_wave[MAX_SAMPLE_SIZE];
 
 uint16_t prev_output[(2*I2S_SAMPLE_RATE)/(uint16_t)NOTE_C0_440HZ];
 uint16_t output[1];
@@ -80,12 +79,13 @@ uint16_t out_index = 0;
 
 bool out_full = false;
 
-waveshape_t current_wave_out = TRIANGLE;
+waveshape_enum current_wave_out = SINE;
 bool cycle_waveshape_flag = false;
 
 uint16_t dma_adc_inputs[ADC1_N_CHANNELS];
 
 float f;
+float f_mod;
 bool timer_updated = false;
 note_t nf_map_440hz[N_OCTAVES * N_SEMITONES];
 
@@ -117,6 +117,8 @@ filter_t filter_RC_highpass;
 float test_R = 2652;
 
 
+bool mod_test_flag;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -139,7 +141,7 @@ void MX_USB_HOST_Process(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-waveshape_t cycle_waveshape (waveshape_t wave) {
+waveshape_enum cycle_waveshape (waveshape_enum wave) {
 	if (wave == SAWTOOTH) {
 		wave = SINE;
 	} else {
@@ -195,14 +197,17 @@ int main(void)
 
   CS43_Init(hi2c1, MODE_I2S);
   CS43_Enable_RightLeft(CS43_RIGHT_LEFT);
-  CS43_SetVolume(50);
+  CS43_SetVolume(25);
   CS43_Start();
 
   timer_utils_init_wavegen_clk();
 
   nf_map_init_440(nf_map_440hz);
 
-  f = nf_get_f440hz(tone, octave, nf_map_440hz);
+//  f = 6;
+  f = nf_get_f440hz(C, 2, nf_map_440hz);
+  f_mod = nf_get_f440hz(C, 3, nf_map_440hz);
+//  f_mod = 6;
   delta_t = 1.0f/(5*f);
 
   ns = round((2*I2S_SAMPLE_RATE)/f);
@@ -210,7 +215,8 @@ int main(void)
   volatile uint16_t dma_adc_key_inputs[16];
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)dma_adc_inputs, ADC1_N_CHANNELS);
 
-  wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1, 0);
+  wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1);
+//  modulator_sine(out_wave, f_mod, 1, ns);
 
 
   filter_lowpass_RC_init(&filter_RC_lowpass, delta_t, fc_lp, 1);
@@ -220,6 +226,9 @@ int main(void)
 //  filter_functions[0] = filter_lowpass_RC_get_next;
   filter_functions[0] = filter_highpass_RC_get_next;
 
+
+  modulator_t mod;
+  am_modulator_init(&mod, SINE, REF_V_DIGITAL, f_mod, 1);
   output[0] = out_wave[out_index];
   HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)output, 1);
 
@@ -239,8 +248,10 @@ int main(void)
 		if (out_index >= ns) {
 			out_index = 0;
 		}
-		output[0] = filter_apply_all(filter_functions, filters, out_wave[out_index], 1);
-//		output[0] = out_wave[out_index];
+//		output[0] = filter_apply_all(filter_functions, filters, out_wave[out_index], 1);
+		output[0] = out_wave[out_index];
+//		if (mod_test_flag)
+		output[0] = am_modulator_update(&mod, out_wave[out_index]);
 		out_flag = false;
     }
 
@@ -254,9 +265,9 @@ int main(void)
 
     if (cycle_waveshape_flag) {
     	debounce_flag = true;
-    	test_R -= 100;
+//    	test_R -= 100;
 //    	filter_lowpass_RC_set_R(&filters[0], test_R);
-    	filter_highpass_RC_set_R(&filters[0], test_R);
+//    	filter_highpass_RC_set_R(&filters[0], test_R);
 
 
     	if (tone == B) {
@@ -273,8 +284,9 @@ int main(void)
 //    	delta_t = 1/(5*f);
 //    	ns = round((2*I2S_SAMPLE_RATE)/f);
 
-//    	current_wave_out = cycle_waveshape(current_wave_out);
-    	wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1, 0);
+    	current_wave_out = cycle_waveshape(current_wave_out);
+    	wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1);
+    	mod_test_flag = !mod_test_flag;
     	cycle_waveshape_flag = false;
 	  }
   }
