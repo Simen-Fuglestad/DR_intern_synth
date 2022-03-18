@@ -7,7 +7,7 @@
 
 
 #include "filter.h"
-static const float C1_DEFAULT = 6E-5;
+static const float C1_DEFAULT = 4E-5;
 
 void filter_highpass_RC_init(filter_t* filter, float delta_t, float fc, float gain) {
 	static uint16_t y[0xFF];

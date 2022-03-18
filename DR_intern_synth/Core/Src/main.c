@@ -24,13 +24,13 @@
 /* USER CODE BEGIN Includes */
 //#include "wave_gen.h"
 #include "wavetable.h"
-#include "note_frequency.h"
 #include "timer_utils.h"
 #include "input_handler.h"
 //#include "DSP_utils.h"
 #include "MY_CS43L22.h"
 #include "filter.h"
 #include "modulator.h"
+#include "oscillator.h"
 
 /* USER CODE END Includes */
 
@@ -67,25 +67,30 @@ TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
 
-uint32_t sine_wave[N_SAMPLES];
-
-uint32_t square_wave[N_SAMPLES];
+uint16_t* wt_sine_ptr;
+uint16_t* wt_square_ptr;
+uint16_t* wt_tri_ptr;
+uint16_t* wt_saw_ptr;
 
 uint16_t out_wave[MAX_SAMPLE_SIZE];
+uint16_t* out_wave_ptr;
 
-uint16_t prev_output[(2*I2S_SAMPLE_RATE)/(uint16_t)NOTE_C0_440HZ];
 uint16_t output[1];
 uint16_t out_index = 0;
 
 bool out_full = false;
 
 waveshape_enum current_wave_out = SINE;
+//wave__enum current_wave_out = SINE;
 bool cycle_waveshape_flag = false;
 
 uint16_t dma_adc_inputs[ADC1_N_CHANNELS];
 
 float f;
-float f_mod;
+float f_mod1;
+float f_mod2;
+float f_mod3;
+
 bool timer_updated = false;
 note_t nf_map_440hz[N_OCTAVES * N_SEMITONES];
 
@@ -105,7 +110,7 @@ float delta_t;
 float ns; //samples per period
 
 semitone_t tone = A;
-uint8_t octave = 4;
+int octave = 4;
 
 filter_t filters[0xFF];
 
@@ -113,11 +118,15 @@ filter_f* filter_functions[0x0F];
 filter_t filter_RC_lowpass;
 filter_t filter_RC_highpass;
 
-
-float test_R = 2652;
-
+float test_R = 5;
 
 bool mod_test_flag;
+
+am_modulator_t mod1;
+am_modulator_t mod2;
+am_modulator_t mod3;
+
+uint8_t chord_progress = 0;
 
 /* USER CODE END PV */
 
@@ -148,6 +157,23 @@ waveshape_enum cycle_waveshape (waveshape_enum wave) {
 		wave++;
 	}
 	return wave;
+}
+
+void set_wave_out(waveshape_enum wave) {
+	switch(wave) {
+	case SINE:
+		out_wave_ptr = wavetable_sine;
+		break;
+	case SQUARE:
+		out_wave_ptr = wavetable_square;
+		break;
+	case TRIANGLE:
+		out_wave_ptr = wavetable_tri;
+		break;
+	default:
+		out_wave_ptr = wavetable_saw;
+		break;
+	}
 }
 
 
@@ -195,41 +221,40 @@ int main(void)
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
+  am_mod_storage_init();
+  wavetable_init(wt_sine_ptr, wt_square_ptr, wt_tri_ptr, wt_saw_ptr, REF_V_DIGITAL);
+
   CS43_Init(hi2c1, MODE_I2S);
   CS43_Enable_RightLeft(CS43_RIGHT_LEFT);
-  CS43_SetVolume(25);
+  CS43_SetVolume(5);
   CS43_Start();
-
-  timer_utils_init_wavegen_clk();
 
   nf_map_init_440(nf_map_440hz);
 
-//  f = 6;
-  f = nf_get_f440hz(C, 2, nf_map_440hz);
-  f_mod = nf_get_f440hz(C, 3, nf_map_440hz);
-//  f_mod = 6;
+  f = nf_get_f440hz(F, 3, nf_map_440hz);
+  f_mod1 = nf_get_f440hz(A, 3, nf_map_440hz);
+  f_mod2 = nf_get_f440hz(C, 4, nf_map_440hz);
+  f_mod3 = nf_get_f440hz(E, 4, nf_map_440hz);
   delta_t = 1.0f/(5*f);
+
+  am_mod_init(&mod1, 0, SINE, REF_V_DIGITAL, f_mod1, 1);
+  am_mod_init(&mod2, 1, SINE, REF_V_DIGITAL, f_mod2, 1);
+  am_mod_init(&mod3, 2, SINE, REF_V_DIGITAL, f_mod3, 1);
+
+//  am_modulator_init(&mod2, SINE, REF_V_DIGITAL, f_mod2, 0.5);
 
   ns = round((2*I2S_SAMPLE_RATE)/f);
 
-  volatile uint16_t dma_adc_key_inputs[16];
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)dma_adc_inputs, ADC1_N_CHANNELS);
-
   wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1);
-//  modulator_sine(out_wave, f_mod, 1, ns);
-
 
   filter_lowpass_RC_init(&filter_RC_lowpass, delta_t, fc_lp, 1);
   filter_highpass_RC_init(&filter_RC_highpass, delta_t, fc_hp, 1);
-//  filters[0] = filter_RC_lowpass;
-  filters[0] = filter_RC_highpass;
-//  filter_functions[0] = filter_lowpass_RC_get_next;
-  filter_functions[0] = filter_highpass_RC_get_next;
 
+  filters[0] = filter_RC_lowpass;
+//  filters[0] = filter_RC_highpass;
+  filter_functions[0] = filter_lowpass_RC_get_next;
+//  filter_functions[0] = filter_highpass_RC_get_next;
 
-  modulator_t mod;
-  am_modulator_init(&mod, SINE, REF_V_DIGITAL, f_mod, 1);
-  output[0] = out_wave[out_index];
   HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)output, 1);
 
   /* USER CODE END 2 */
@@ -248,45 +273,89 @@ int main(void)
 		if (out_index >= ns) {
 			out_index = 0;
 		}
-//		output[0] = filter_apply_all(filter_functions, filters, out_wave[out_index], 1);
-		output[0] = out_wave[out_index];
+
+//		output[0] = osc_get_next(&osc1);
+//		output[0] = osc_next_sine(&osc1, REF_V_DIGITAL, 1);
+//		output[0] = out_wave[out_index];
 //		if (mod_test_flag)
-		output[0] = am_modulator_update(&mod, out_wave[out_index]);
+//		uint16_t filtered = filter_apply(filter_functions, filters, out_wave[out_index], 1);
+		uint16_t modded1 = am_mod_update(&mod1, out_wave[out_index]);
+		uint16_t modded2 = am_mod_update(&mod2, modded1);
+//		uint16_t modded3 = am_mod_update(&mod3, modded2);
+		output[0] = modded2;
+//		output[0] = am_modulator_update(&mod3, am_modulator_update(&mod2, am_modulator_update(&mod1, filtered)));
+//		output[0] = filter_apply(filter_functions, filters, am_modulator_update(&mod, out_wave[out_index]), 1);
+
 		out_flag = false;
     }
 
-    if (debounce_flag) {
-    	debounce_cnt++;
-    	if (debounce_cnt >= debounce_limit) {
-    		debounce_flag = false;
-    		debounce_cnt = 0;
-    	}
-    }
+//    if (debounce_flag) {
+//    	debounce_cnt++;
+//    	if (debounce_cnt >= debounce_limit) {
+//    		debounce_flag = false;
+//    		debounce_cnt = 0;
+//    	}
+//    }
+
+
 
     if (cycle_waveshape_flag) {
-    	debounce_flag = true;
-//    	test_R -= 100;
-//    	filter_lowpass_RC_set_R(&filters[0], test_R);
+//    	debounce_flag = true;
+    	test_R += 5;
+    	filter_lowpass_RC_set_R(&filters[0], test_R);
 //    	filter_highpass_RC_set_R(&filters[0], test_R);
 
 
-    	if (tone == B) {
-    		tone = C;
-    		octave++;
-    		if (octave > 8) {
-    			octave = 0;
-    		}
-    	} else {
-    		tone++;
+//    	if (tone == B) {
+//    		tone = C;
+//    		octave++;
+//    		if (octave > 8) {
+//    			octave = 0;
+//    		}
+//    	} else {
+//    		tone++;
+//    	}
+
+//    	if (tone == C) {
+//    		tone = B;
+//    		octave--;
+//    		if (octave < 0) {
+//    			octave = 8;
+//    		}
+//    	} else {
+//    		tone--;
+//    	}
+    	if (chord_progress == 0) {
+    		f = nf_get_f440hz(D, 3, nf_map_440hz);
+    		f_mod1 = nf_get_f440hz(F, 3, nf_map_440hz);
+    		f_mod2 = nf_get_f440hz(A, 3, nf_map_440hz);
+    		f_mod3 = nf_get_f440hz(C, 4, nf_map_440hz);
     	}
-
-//    	f = nf_get_f440hz(tone, octave, nf_map_440hz);
+    	else if (chord_progress == 1) {
+    		f = nf_get_f440hz(C, 3, nf_map_440hz);
+    		f_mod1 = nf_get_f440hz(E, 3, nf_map_440hz);
+    		f_mod2 = nf_get_f440hz(G, 3, nf_map_440hz);
+    		f_mod3 = nf_get_f440hz(B, 3, nf_map_440hz);
+    	}
+    	else if (chord_progress == 2) {
+    		f = nf_get_f440hz(F, 3, nf_map_440hz);
+    		f_mod1 = nf_get_f440hz(A, 3, nf_map_440hz);
+    		f_mod2 = nf_get_f440hz(C, 4, nf_map_440hz);
+    		f_mod3 = nf_get_f440hz(E, 4, nf_map_440hz);
+    	}
+    	chord_progress++;
+    	if(chord_progress == 3) chord_progress = 0;
 //    	delta_t = 1/(5*f);
-//    	ns = round((2*I2S_SAMPLE_RATE)/f);
+    	ns = round((2*I2S_SAMPLE_RATE)/f);
 
-    	current_wave_out = cycle_waveshape(current_wave_out);
+//    	am_modulator_init(&mod1, SINE, REF_V_DIGITAL, f_mod1, 0.5);
+//    	current_wave_out = cycle_waveshape(current_wave_out);
     	wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1);
-    	mod_test_flag = !mod_test_flag;
+//    	mod_test_flag = !mod_test_flag;
+
+    	am_mod_set_f(&mod1, f_mod1);
+    	am_mod_set_f(&mod2, f_mod2);
+    	am_mod_set_f(&mod3, f_mod3);
     	cycle_waveshape_flag = false;
 	  }
   }
@@ -755,3 +824,4 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
