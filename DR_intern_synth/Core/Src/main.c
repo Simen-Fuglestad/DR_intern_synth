@@ -30,7 +30,8 @@
 #include "MY_CS43L22.h"
 #include "filter.h"
 #include "modulator.h"
-#include "oscillator.h"
+#include "math_utils.h"
+//#include "oscillator.h"
 
 /* USER CODE END Includes */
 
@@ -75,13 +76,11 @@ uint16_t* wt_saw_ptr;
 uint16_t out_wave[MAX_SAMPLE_SIZE];
 uint16_t* out_wave_ptr;
 
-uint16_t output[1];
-uint16_t out_index = 0;
+uint16_t output[2];
 
 bool out_full = false;
 
 waveshape_enum current_wave_out = SINE;
-//wave__enum current_wave_out = SINE;
 bool cycle_waveshape_flag = false;
 
 uint16_t dma_adc_inputs[ADC1_N_CHANNELS];
@@ -109,8 +108,8 @@ float delta_t;
 
 float ns; //samples per period
 
-semitone_t tone = A;
-int octave = 4;
+semitone_t tone = C;
+uint8_t octave = 0;
 
 filter_t filters[0xFF];
 
@@ -125,7 +124,6 @@ bool mod_test_flag;
 am_modulator_t mod1;
 am_modulator_t mod2;
 am_modulator_t mod3;
-
 uint8_t chord_progress = 0;
 
 /* USER CODE END PV */
@@ -231,21 +229,26 @@ int main(void)
 
   nf_map_init_440(nf_map_440hz);
 
-  f = nf_get_f440hz(F, 3, nf_map_440hz);
-  f_mod1 = nf_get_f440hz(A, 3, nf_map_440hz);
-  f_mod2 = nf_get_f440hz(C, 4, nf_map_440hz);
-  f_mod3 = nf_get_f440hz(E, 4, nf_map_440hz);
+  f = nf_get_f440hz(C, 0, nf_map_440hz);
+  f_mod1 = nf_get_f440hz(A, 1, nf_map_440hz);
+  f_mod2 = nf_get_f440hz(C, 2, nf_map_440hz);
+  f_mod3 = nf_get_f440hz(E, 2, nf_map_440hz);
   delta_t = 1.0f/(5*f);
 
   am_mod_init(&mod1, 0, SINE, REF_V_DIGITAL, f_mod1, 1);
   am_mod_init(&mod2, 1, SINE, REF_V_DIGITAL, f_mod2, 1);
   am_mod_init(&mod3, 2, SINE, REF_V_DIGITAL, f_mod3, 1);
 
-//  am_modulator_init(&mod2, SINE, REF_V_DIGITAL, f_mod2, 0.5);
-
-  ns = round((2*I2S_SAMPLE_RATE)/f);
+  ns = round(I2S_SAMPLE_RATE/f);
+  float out_index_f = 0;
+  uint16_t out_index = 0;
 
   wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1);
+
+  float o_step = 1.0594630943592953;
+  uint8_t current_octave = 3;
+  uint8_t current_semitone = 0;
+  float index_step = pow(o_step, 12*current_octave + current_semitone);
 
   filter_lowpass_RC_init(&filter_RC_lowpass, delta_t, fc_lp, 1);
   filter_highpass_RC_init(&filter_RC_highpass, delta_t, fc_hp, 1);
@@ -255,7 +258,8 @@ int main(void)
   filter_functions[0] = filter_lowpass_RC_get_next;
 //  filter_functions[0] = filter_highpass_RC_get_next;
 
-  HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)output, 1);
+
+  HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)output, 2);
 
   /* USER CODE END 2 */
 
@@ -268,41 +272,54 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    if (out_flag) {
-		out_index++;
-		if (out_index >= ns) {
-			out_index = 0;
-		}
 
-//		output[0] = osc_get_next(&osc1);
-//		output[0] = osc_next_sine(&osc1, REF_V_DIGITAL, 1);
+//	output[1] = next_sine(out_index+1, ns);
+
+
+    if (out_flag) {
+    	uint16_t out_val = out_wave[(uint16_t)floor(out_index_f)];
+    	output[0] = out_val;
+    	output[1] = output[0];
+    	out_index_f = out_index_f + index_step;
+    	if (out_index_f >= ns) {
+    //			out_index_f = modf(out_index, NULL);
+    		out_index_f = out_index_f - ns;
+    //			out_index = 0;
+    	}
+//		output[0] = out_wave_ptr[(uint16_t)round(out_index)];
+
 //		output[0] = out_wave[out_index];
+//		output[1] = output[0];
+//		out_index++;
+
+//
 //		if (mod_test_flag)
 //		uint16_t filtered = filter_apply(filter_functions, filters, out_wave[out_index], 1);
-		uint16_t modded1 = am_mod_update(&mod1, out_wave[out_index]);
-		uint16_t modded2 = am_mod_update(&mod2, modded1);
+//		uint16_t modded1 = am_mod_update(&mod1, out_wave[out_index]);
+//		uint16_t modded2 = am_mod_update(&mod2, modded1);
 //		uint16_t modded3 = am_mod_update(&mod3, modded2);
-		output[0] = modded2;
+//		output[0] = modded3;
+//
 //		output[0] = am_modulator_update(&mod3, am_modulator_update(&mod2, am_modulator_update(&mod1, filtered)));
 //		output[0] = filter_apply(filter_functions, filters, am_modulator_update(&mod, out_wave[out_index]), 1);
 
 		out_flag = false;
     }
 
-//    if (debounce_flag) {
-//    	debounce_cnt++;
-//    	if (debounce_cnt >= debounce_limit) {
-//    		debounce_flag = false;
-//    		debounce_cnt = 0;
-//    	}
-//    }
+    if (debounce_flag) {
+    	debounce_cnt++;
+    	if (debounce_cnt >= debounce_limit) {
+    		debounce_flag = false;
+    		debounce_cnt = 0;
+    	}
+    }
 
 
 
     if (cycle_waveshape_flag) {
-//    	debounce_flag = true;
-    	test_R += 5;
-    	filter_lowpass_RC_set_R(&filters[0], test_R);
+    	debounce_flag = true;
+//    	test_R += 5;
+//    	filter_lowpass_RC_set_R(&filters[0], test_R);
 //    	filter_highpass_RC_set_R(&filters[0], test_R);
 
 
@@ -325,37 +342,50 @@ int main(void)
 //    	} else {
 //    		tone--;
 //    	}
-    	if (chord_progress == 0) {
-    		f = nf_get_f440hz(D, 3, nf_map_440hz);
-    		f_mod1 = nf_get_f440hz(F, 3, nf_map_440hz);
-    		f_mod2 = nf_get_f440hz(A, 3, nf_map_440hz);
-    		f_mod3 = nf_get_f440hz(C, 4, nf_map_440hz);
-    	}
-    	else if (chord_progress == 1) {
-    		f = nf_get_f440hz(C, 3, nf_map_440hz);
-    		f_mod1 = nf_get_f440hz(E, 3, nf_map_440hz);
-    		f_mod2 = nf_get_f440hz(G, 3, nf_map_440hz);
-    		f_mod3 = nf_get_f440hz(B, 3, nf_map_440hz);
-    	}
-    	else if (chord_progress == 2) {
-    		f = nf_get_f440hz(F, 3, nf_map_440hz);
-    		f_mod1 = nf_get_f440hz(A, 3, nf_map_440hz);
-    		f_mod2 = nf_get_f440hz(C, 4, nf_map_440hz);
-    		f_mod3 = nf_get_f440hz(E, 4, nf_map_440hz);
-    	}
-    	chord_progress++;
-    	if(chord_progress == 3) chord_progress = 0;
+//    	if (chord_progress == 0) {
+//    		f = nf_get_f440hz(D, 1, nf_map_440hz);
+//    		f_mod1 = nf_get_f440hz(F, 1, nf_map_440hz);
+//    		f_mod2 = nf_get_f440hz(A, 1, nf_map_440hz);
+//    		f_mod3 = nf_get_f440hz(C, 2, nf_map_440hz);
+//    	}
+//    	else if (chord_progress == 1) {
+//    		f = nf_get_f440hz(C, 1, nf_map_440hz);
+//    		f_mod1 = nf_get_f440hz(E, 2, nf_map_440hz);
+//    		f_mod2 = nf_get_f440hz(G, 2, nf_map_440hz);
+//    		f_mod3 = nf_get_f440hz(B, 2, nf_map_440hz);
+//    	}
+//    	else if (chord_progress == 2) {
+//    		f = nf_get_f440hz(F, 1, nf_map_440hz);
+//    		f_mod1 = nf_get_f440hz(A, 1, nf_map_440hz);
+//    		f_mod2 = nf_get_f440hz(C, 2, nf_map_440hz);
+//    		f_mod3 = nf_get_f440hz(E, 2, nf_map_440hz);
+//    	}
+//    	chord_progress++;
+//    	if(chord_progress == 3) chord_progress = 0;
 //    	delta_t = 1/(5*f);
-    	ns = round((2*I2S_SAMPLE_RATE)/f);
+//    	f = nf_get_f440hz(tone, octave, nf_map_440hz);
+//    	ns = round((I2S_SAMPLE_RATE)/f);
 
 //    	am_modulator_init(&mod1, SINE, REF_V_DIGITAL, f_mod1, 0.5);
 //    	current_wave_out = cycle_waveshape(current_wave_out);
-    	wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1);
+//    	wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1);
+//    	set_wave_out(current_wave_out);
 //    	mod_test_flag = !mod_test_flag;
 
-    	am_mod_set_f(&mod1, f_mod1);
-    	am_mod_set_f(&mod2, f_mod2);
-    	am_mod_set_f(&mod3, f_mod3);
+//    	am_mod_set_f(&mod1, f_mod1);
+//    	am_mod_set_f(&mod2, f_mod2);
+//    	am_mod_set_f(&mod3, f_mod3);
+
+    	current_semitone++;
+    	if (current_semitone == 12) {
+    		current_semitone = 0;
+    		current_octave++;
+    	}
+
+    	if (current_octave > 8) {
+    		current_octave = 0;
+    	}
+    	index_step = pow(o_step, 12*current_octave + current_semitone);
     	cycle_waveshape_flag = false;
 	  }
   }
@@ -772,6 +802,12 @@ static void MX_GPIO_Init(void)
 //
 //void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 //	if (hadc == &hadc1) {
+//	}
+//}
+
+//void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef* hi2s) {
+//	if (hi2s == &hi2s3) {
+//		out_flag_left = true;
 //	}
 //}
 

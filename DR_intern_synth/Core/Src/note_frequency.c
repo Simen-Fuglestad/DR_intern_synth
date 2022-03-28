@@ -7,10 +7,6 @@
 
 #include "note_frequency.h"
 
-char* CHROMA_SCALE[N_SEMITONES] = {
-    "C\0", "C#\0", "D\0", "D#\0", "E\0", "F\0", "F#\0", "G\0", "G#\0", "A\0", "A#\0", "B\0"
-};
-
 void nf_map_init_440(note_t* nf_lookup_table_440hz) {
 	note_t note;
     const double p = (double)1/12;

@@ -24,16 +24,15 @@ typedef struct {
 	uint8_t storage_n;
 } am_modulator_t;
 
-am_modulator_t am_mod1;
+//am_modulator_t am_mod1;
 uint16_t am_mod1_wt[MAX_SAMPLE_SIZE];
 
-am_modulator_t am_mod2;
+//am_modulator_t am_mod2;
 uint16_t am_mod2_wt[MAX_SAMPLE_SIZE];
 
-am_modulator_t am_mod3;
+//am_modulator_t am_mod3;
 uint16_t am_mod3_wt[MAX_SAMPLE_SIZE];
 
-am_modulator_t am_mod_storage[0x0F];
 uint16_t* am_mod_wtable_storage[0x0F];
 
 typedef struct {

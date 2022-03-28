@@ -6,13 +6,8 @@
  */
 
 #include "modulator.h"
-#include <string.h>
 
 void am_mod_storage_init() {
-	am_mod_storage[0] = am_mod1;
-	am_mod_storage[1] = am_mod2;
-	am_mod_storage[2] = am_mod3;
-
 	am_mod_wtable_storage[0] = am_mod1_wt;
 	am_mod_wtable_storage[1] = am_mod2_wt;
 	am_mod_wtable_storage[2] = am_mod3_wt;
@@ -42,6 +37,5 @@ uint16_t am_mod_update(am_modulator_t* mod, uint16_t in) {
 void am_mod_set_f(am_modulator_t* mod, float f) {
 	uint16_t nsm = round((2*I2S_SAMPLE_RATE)/f);
 	mod->nsm = nsm;
-	memset(am_mod_wtable_storage[mod->storage_n], 0, MAX_SAMPLE_SIZE * sizeof(uint16_t));
 	wavetable_create(mod->carrier_waveshape, am_mod_wtable_storage[mod->storage_n], 0xFFF, nsm, 1);
 }

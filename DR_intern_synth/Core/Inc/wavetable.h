@@ -9,7 +9,8 @@
 #define INC_WAVETABLE_H_
 
 #define I2S_SAMPLE_RATE 48000
-#define MAX_SAMPLE_SIZE (2*I2S_SAMPLE_RATE)/(uint16_t)16.35
+#define MAX_SAMPLE_SIZE_F (I2S_SAMPLE_RATE)/16.352
+#define MAX_SAMPLE_SIZE 2936
 #include <stdint.h>
 #include "note_frequency.h"
 
