@@ -11,6 +11,7 @@
 #define I2S_SAMPLE_RATE 48000
 #define MAX_SAMPLE_SIZE_F (I2S_SAMPLE_RATE)/16.352
 #define MAX_SAMPLE_SIZE 2936
+
 #include <stdint.h>
 #include "note_frequency.h"
 
@@ -24,11 +25,6 @@ typedef struct {
 } wavetable_tone_t;
 
 wavetable_tone_t wavetable_tone_bank[N_OCTAVES * N_SEMITONES];
-
-uint16_t wavetable_sine[MAX_SAMPLE_SIZE];
-uint16_t wavetable_square[MAX_SAMPLE_SIZE];
-uint16_t wavetable_tri[MAX_SAMPLE_SIZE];
-uint16_t wavetable_saw[MAX_SAMPLE_SIZE];
 
 void wavetable_init(uint16_t* wt_sine, uint16_t* wt_square, uint16_t* wt_tri, uint16_t* wt_saw, uint16_t ref_v);
 

@@ -16,17 +16,6 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-void wavetable_init(uint16_t* wt_sine, uint16_t* wt_square, uint16_t* wt_tri, uint16_t* wt_saw, uint16_t ref_v) {
-	wt_sine = wavetable_sine;
-	wt_square = wavetable_square;
-	wt_tri = wavetable_tri;
-	wt_saw = wavetable_saw;
-	wavetable_create_sine(wavetable_sine, ref_v, MAX_SAMPLE_SIZE, 1);
-	wavetable_create_square(wavetable_square, ref_v, MAX_SAMPLE_SIZE, 1);
-	wavetable_create_triangle(wavetable_tri, ref_v, MAX_SAMPLE_SIZE, 1);
-	wavetable_create_sawtooth(wavetable_saw, ref_v, MAX_SAMPLE_SIZE, 1);
-}
-
 void wavetable_create(
 		waveshape_enum waveshape, uint16_t* out, uint16_t ref_v,
 		uint16_t ns, float amp) {

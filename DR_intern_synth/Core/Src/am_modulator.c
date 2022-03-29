@@ -7,35 +7,27 @@
 
 #include "modulator.h"
 
-void am_mod_storage_init() {
-	am_mod_wtable_storage[0] = am_mod1_wt;
-	am_mod_wtable_storage[1] = am_mod2_wt;
-	am_mod_wtable_storage[2] = am_mod3_wt;
-}
-
 void am_mod_init(
-		am_modulator_t* mod, uint16_t mod_n, waveshape_enum waveshape, uint16_t ref_v, float f, float gain) {
-	uint16_t nsm = round((2*I2S_SAMPLE_RATE)/f);
-
-	wavetable_create(waveshape, am_mod_wtable_storage[mod_n], ref_v, nsm, gain);
-
-	mod->wtable_ptr = am_mod_wtable_storage[mod_n];
-
-	mod->storage_n = mod_n;
-	mod->carrier_waveshape = waveshape;
-	mod->nsm = nsm;
-	mod->current_index = 0;
+		am_modulator_t* mod, uint16_t* out_wave, semitone_t st, uint8_t oct) {
+	mod->out_wave = out_wave;
+	float step = pow(OCTAVE_STEP, 12 *oct + st);
+	mod->index_step = step;
+	mod->current_index = 0.0f;
 }
 
-uint16_t am_mod_update(am_modulator_t* mod, uint16_t in) {
-	uint16_t out = in - mod->wtable_ptr[mod->current_index];
-	mod->current_index++;
-	if(mod->current_index >= mod->nsm) mod->current_index = 0;
-	return out;
+uint16_t am_modulate(am_modulator_t* mod, uint16_t in, float ns) {
+	uint16_t result = (in + mod->out_wave[(uint16_t)floor(mod->current_index)])/2;
+	float index = mod->current_index + mod->index_step;
+	if (index >= ns) {
+		mod->current_index = index - ns;
+	}
+	else {
+		mod->current_index = mod->current_index + mod->index_step;
+	}
+
+	return result;
 }
 
-void am_mod_set_f(am_modulator_t* mod, float f) {
-	uint16_t nsm = round((2*I2S_SAMPLE_RATE)/f);
-	mod->nsm = nsm;
-	wavetable_create(mod->carrier_waveshape, am_mod_wtable_storage[mod->storage_n], 0xFFF, nsm, 1);
+void am_mod_set_tone(am_modulator_t* mod, semitone_t st, uint8_t oct) {
+	mod->index_step = pow(OCTAVE_STEP, 12*oct + st);
 }

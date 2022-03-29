@@ -11,29 +11,18 @@
 #include <stdint.h>
 #include <math.h>
 #include "wavetable.h"
+#include "note_frequency.h"
+#include <string.h>
 
 typedef enum {
 	FM, AM, LFO
 } modulator_enum;
 
 typedef struct {
-	uint16_t* wtable_ptr;
-	waveshape_enum carrier_waveshape;
-	uint16_t nsm;
-	uint16_t current_index;
-	uint8_t storage_n;
+	uint16_t* out_wave;
+	float current_index;
+	float index_step;
 } am_modulator_t;
-
-//am_modulator_t am_mod1;
-uint16_t am_mod1_wt[MAX_SAMPLE_SIZE];
-
-//am_modulator_t am_mod2;
-uint16_t am_mod2_wt[MAX_SAMPLE_SIZE];
-
-//am_modulator_t am_mod3;
-uint16_t am_mod3_wt[MAX_SAMPLE_SIZE];
-
-uint16_t* am_mod_wtable_storage[0x0F];
 
 typedef struct {
 	float fc;
@@ -45,10 +34,8 @@ typedef struct {
 	float kf; //sensitivity factor
 } fm_modulator_t;
 
-void am_mod_storage_init();
-
+uint16_t am_modulate(am_modulator_t* mod, uint16_t in, float ns);
 void am_mod_init(
-		am_modulator_t* mod, uint16_t mod_n, waveshape_enum mod_enum, uint16_t ref_v, float f, float gain);
-uint16_t am_mod_update(am_modulator_t* mod, uint16_t in);
-void am_mod_set_f(am_modulator_t* mod, float f);
+		am_modulator_t* mod, uint16_t* out_wave, semitone_t st, uint8_t oct);
+void am_mod_set_tone(am_modulator_t* mod, semitone_t st, uint8_t octave);
 #endif /* INC_MODULATOR_H_ */
