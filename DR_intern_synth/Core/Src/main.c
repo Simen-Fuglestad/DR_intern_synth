@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 //#include "wave_gen.h"
+#include "usb_host.h"
 #include "wavetable.h"
 #include "timer_utils.h"
 #include "input_handler.h"
@@ -30,7 +31,9 @@
 #include "MY_CS43L22.h"
 #include "filter.h"
 #include "modulator.h"
-#include "math_utils.h"
+#include "mixer.h"
+#include "usbh_MIDI.h"
+#include "MIDI_application.h"
 //#include "oscillator.h"
 
 /* USER CODE END Includes */
@@ -42,7 +45,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define REF_V_ANALOG 3.25
+#define REF_V_ANALOG 2.90
 #define REF_V_DIGITAL 0xFFF
 #define N_SAMPLES 255
 #define ADC1_N_CHANNELS 3 //active channels on adc 1
@@ -54,7 +57,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-ADC_HandleTypeDef hadc1;
+ ADC_HandleTypeDef hadc1;
 
 I2C_HandleTypeDef hi2c1;
 
@@ -65,19 +68,21 @@ DMA_HandleTypeDef hdma_spi3_tx;
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
+
+UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
-uint16_t* wt_sine_ptr;
-uint16_t* wt_square_ptr;
-uint16_t* wt_tri_ptr;
-uint16_t* wt_saw_ptr;
+//USBH_HandleTypeDef hUSBHost; /* USB Host handle */
+//extern USBH_HandleTypeDef hUsbHostFS;
+
+//MIDI_ApplicationTypeDef Appli_state = APPLICATION_IDLE;
 
 uint16_t out_wave_sine[MAX_SAMPLE_SIZE];
 uint16_t out_wave_square[MAX_SAMPLE_SIZE];
 uint16_t out_wave_tri[MAX_SAMPLE_SIZE];
 uint16_t out_wave_saw[MAX_SAMPLE_SIZE];
-uint16_t* out_wave_ptr;
 
 uint16_t output[2];
 
@@ -89,9 +94,6 @@ bool cycle_waveshape_flag = false;
 uint16_t dma_adc_inputs[ADC1_N_CHANNELS];
 
 float f_base;
-float f_mod1;
-float f_mod2;
-float f_mod3;
 
 bool timer_updated = false;
 note_t nf_map_440hz[N_OCTAVES * N_SEMITONES];
@@ -102,17 +104,10 @@ bool debounce_flag = false;
 
 bool out_flag = false;
 
-bool btn_pressed = false;
-
-float fc_hp = 1;
-float fc_lp = 530;
-
-float delta_t;
+float fc_hp;
+float fc_lp;
 
 float ns; //samples per period
-
-semitone_t tone = C;
-uint8_t octave = 0;
 
 filter_t filters[0xFF];
 
@@ -120,14 +115,17 @@ filter_f* filter_functions[0x0F];
 filter_t filter_RC_lowpass;
 filter_t filter_RC_highpass;
 
-float test_R = 5;
-
-bool mod_test_flag;
-
 am_modulator_t mod1;
 am_modulator_t mod2;
 am_modulator_t mod3;
 uint8_t chord_progress = 0;
+
+uint16_t buff_sz = 18;
+uint16_t adc_dma_buff[18];
+
+uint16_t MIDI_in_buff[0xff];
+
+USBH_HandleTypeDef hUSBHost; /* USB Host handle */
 
 /* USER CODE END PV */
 
@@ -142,6 +140,8 @@ static void MX_I2S3_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_TIM3_Init(void);
+static void MX_USART2_UART_Init(void);
 void MX_USB_HOST_Process(void);
 
 /* USER CODE BEGIN PFP */
@@ -160,7 +160,29 @@ waveshape_enum cycle_waveshape (waveshape_enum wave) {
 	return wave;
 }
 
+static void USBH_UserProcess_callback(USBH_HandleTypeDef *pHost, uint8_t vId)
+{
+	switch (vId)
+	{
+	case HOST_USER_SELECT_CONFIGURATION:
+		break;
 
+	case HOST_USER_DISCONNECTION:
+//		Appli_state = APPLICATION_DISCONNECT;
+		break;
+
+	case HOST_USER_CLASS_ACTIVE:
+//		Appli_state = APPLICATION_READY;
+		break;
+
+	case HOST_USER_CONNECTION:
+//		Appli_state = APPLICATION_START;
+		break;
+
+	default:
+		break;
+	}
+}
 
 /* USER CODE END 0 */
 
@@ -201,10 +223,15 @@ int main(void)
   MX_I2S2_Init();
   MX_I2S3_Init();
   MX_SPI1_Init();
-  MX_USB_HOST_Init();
   MX_TIM2_Init();
   MX_ADC1_Init();
+  MX_TIM3_Init();
+  MX_USART2_UART_Init();
+  MX_USB_HOST_Init();
   /* USER CODE BEGIN 2 */
+//  MX_USB_HOST_Init();
+
+//  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_0);
 
   CS43_Init(hi2c1, MODE_I2S);
   CS43_Enable_RightLeft(CS43_RIGHT_LEFT);
@@ -213,47 +240,57 @@ int main(void)
 
   nf_map_init_440(nf_map_440hz);
 
-  f_base = nf_get_f440hz(C, 0, nf_map_440hz); //use as basis for all subsequent waves
-  delta_t = 1.0f/(5*f_base);
+  f_base = nf_get_f440hz(SEMITONE_C, 0, nf_map_440hz); //use as basis for all subsequent waves
 
   ns = round(I2S_SAMPLE_RATE/f_base);
   wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL, ns, 1);
   wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL, ns, 1);
   wavetable_create(TRIANGLE, out_wave_tri, REF_V_DIGITAL, ns, 1);
-  wavetable_create(SAWTOOTH, out_wave_sine, REF_V_DIGITAL, ns, 1);
-
-
-  float out_index_f = 0;
-
-  wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL, ns, 1);
-  wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL, ns, 1);
-  wavetable_create(TRIANGLE, out_wave_tri, REF_V_DIGITAL, ns, 1);
   wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL, ns, 1);
 
-  uint8_t current_octave = 4;
-  semitone_t current_semitone = C;
-  float index_step = pow(OCTAVE_STEP, 12*4 + C);
+  float out_index_f = 0;
+  float index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_C);
 
-  am_mod_init(&mod1, out_wave_sine, E, 4);
-  am_mod_init(&mod2, out_wave_sine, G, 4);
-  am_mod_init(&mod3, out_wave_sine, B, 4);
+  am_mod_init(&mod1, out_wave_sine, SEMITONE_E, 4);
+  am_mod_init(&mod2, out_wave_sine, SEMITONE_G, 4);
+  am_mod_init(&mod3, out_wave_sine, SEMITONE_B, 4);
 
-  filter_lowpass_RC_init(&filter_RC_lowpass, delta_t, fc_lp, 1);
-  filter_highpass_RC_init(&filter_RC_highpass, delta_t, fc_hp, 1);
+  fc_lp = mixer_get_filter_fc_low();
+  fc_hp = mixer_get_filter_fc_high();
+  filter_lowpass_RC_init(&filter_RC_lowpass, fc_lp, 1);
+  filter_highpass_RC_init(&filter_RC_highpass, fc_hp, 1);
 
-  filters[0] = filter_RC_lowpass;
-//  filters[0] = filter_RC_highpass;
-  filter_functions[0] = filter_lowpass_RC_get_next;
-//  filter_functions[0] = filter_highpass_RC_get_next;
+//  filters[0] = filter_RC_lowpass;
+  filters[0] = filter_RC_highpass;
+//  filter_functions[0] = filter_lowpass_RC_get_next;
+  filter_functions[0] = filter_highpass_RC_get_next;
 
   HAL_StatusTypeDef tx = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)output, 2);
+//  GPIO_PinState c0 =  HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0);
+  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_0);
+
+//	/*## Init Host Library ################################################*/
+//  USBH_Init(&hUSBHost, USBH_UserProcess_callback, 0);
+//
+//	/*## Add Supported Class ##############################################*/
+//
+//
+//	/*## Start Host Process ###############################################*/
+//  USBH_Start(&hUSBHost);
+
+
+//  HAL_ADC_Start_DMA(&hadc1, adc_dma_buff, 10);
+//  mixer_init(&hadc1);
+//  mixer_DMA_start(&htim3);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
+	  MIDI_Application();
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 
@@ -261,17 +298,16 @@ int main(void)
 
     if (out_flag) {
     	uint16_t out_val = out_wave_sine[(uint16_t)floor(out_index_f)];
-    	out_val = am_modulate(&mod1, out_val, ns);
-    	out_val = am_modulate(&mod2, out_val, ns);
-    	out_val = am_modulate(&mod3, out_val, ns);
+//    	out_val = am_modulate(&mod1, out_val, ns);
+//    	out_val = am_modulate(&mod2, out_val, ns);
+//    	out_val = am_modulate(&mod3, out_val, ns);
+//    	out_val = filter_apply(filter_functions, filters, out_val, 1);
     	output[0] = out_val;
-    	output[1] = output[0];
+    	output[1] = out_val;
     	out_index_f = out_index_f + index_step;
     	if (out_index_f >= ns) {
     		out_index_f = out_index_f - ns;
     	}
-//		output[0] = am_modulator_update(&mod3, am_modulator_update(&mod2, am_modulator_update(&mod1, filtered)));
-//		output[0] = filter_apply(filter_functions, filters, am_modulator_update(&mod, out_wave[out_index]), 1);
 
 		out_flag = false;
     }
@@ -285,13 +321,12 @@ int main(void)
     }
 
 
-
     if (cycle_waveshape_flag) {
-    	debounce_flag = true;
-//    	test_R += 5;
-//    	filter_lowpass_RC_set_R(&filters[0], test_R);
-//    	filter_highpass_RC_set_R(&filters[0], test_R);
 
+    	debounce_flag = true;
+//    	filter_lowpass_RC_set_R(&filters[0], filters[0].R[0]+50); //test lp
+//    	filter_highpass_RC_set_R(&filters[1], filters[0].R[0]-50); //test hp
+//    	filter_highpass_RC_set_R(&filters[0], filters[1]);
 
 //    	if (tone == B) {
 //    		tone = C;
@@ -313,38 +348,38 @@ int main(void)
 //    		tone--;
 //    	}
     	if (chord_progress == 0) {
-    		index_step = pow(OCTAVE_STEP, 12*4 + F);
-    		am_mod_set_tone(&mod1, A, 4);
-    		am_mod_set_tone(&mod2, C, 5);
-    		am_mod_set_tone(&mod3, E, 5);
+    		index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_F);
+    		am_mod_set_tone(&mod1, SEMITONE_A, 4);
+    		am_mod_set_tone(&mod2, SEMITONE_C, 5);
+    		am_mod_set_tone(&mod3, SEMITONE_E, 5);
     	}
     	else if (chord_progress == 1) {
-    		index_step = pow(OCTAVE_STEP, 12*4 + D);
-    		am_mod_set_tone(&mod1, F, 4);
-    		am_mod_set_tone(&mod2, A, 4);
-    		am_mod_set_tone(&mod3, C, 5);
+    		index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_D);
+    		am_mod_set_tone(&mod1, SEMITONE_F, 4);
+    		am_mod_set_tone(&mod2, SEMITONE_A, 4);
+    		am_mod_set_tone(&mod3, SEMITONE_C, 5);
     	}
     	else if (chord_progress == 2) {
-    		index_step = pow(OCTAVE_STEP, 12*4 + C);
-    		am_mod_set_tone(&mod1, E, 4);
-    		am_mod_set_tone(&mod2, G, 4);
-    		am_mod_set_tone(&mod3, B, 4);
+    		index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_C);
+    		am_mod_set_tone(&mod1, SEMITONE_E, 4);
+    		am_mod_set_tone(&mod2, SEMITONE_G, 4);
+    		am_mod_set_tone(&mod3, SEMITONE_B, 4);
     	}
 
     	chord_progress++;
     	if(chord_progress == 3) chord_progress = 0;
-//    	delta_t = 1/(5*f);
-//    	f = nf_get_f440hz(tone, octave, nf_map_440hz);
-//    	ns = round((I2S_SAMPLE_RATE)/f);
-
-//    	am_modulator_init(&mod1, SINE, REF_V_DIGITAL, f_mod1, 0.5);
-//    	current_wave_out = cycle_waveshape(current_wave_out);
-//    	wavetable_create(current_wave_out, out_wave, REF_V_DIGITAL, ns, 1);
-//    	set_wave_out(current_wave_out);
-//    	mod_test_flag = !mod_test_flag;
 
     	cycle_waveshape_flag = false;
 	  }
+
+    if (get_mixer_update_flag()) {
+    	fc_lp = mixer_get_filter_fc_low();
+//    	float new_R = filter_lowpass_compute_R(fc_lp, filters[0].C[0]);
+    	float new_R = 12.95;
+//    	filter_lowpass_RC_set_R(&filters[0], new_R);
+
+    	fc_hp = mixer_get_filter_fc_high();
+    }
   }
   /* USER CODE END 3 */
 }
@@ -362,6 +397,7 @@ void SystemClock_Config(void)
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
@@ -377,6 +413,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
@@ -429,6 +466,7 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 1 */
 
   /* USER CODE END ADC1_Init 1 */
+
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
@@ -447,6 +485,7 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
   sConfig.Channel = ADC_CHANNEL_1;
@@ -651,6 +690,87 @@ static void MX_TIM2_Init(void)
 }
 
 /**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 137;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 65535;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_OC_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_TIMING;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 31250;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
   * Enable DMA controller clock
   */
 static void MX_DMA_Init(void)
@@ -778,12 +898,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_0 && debounce_flag == false) {
 		cycle_waveshape_flag = true;
 	}
-//	if (GPIO_Pin == GPIO_PIN_0 && debounce_flag == false) {
-//		filter_flag = !filter_flag;
-//		btn_pressed = true;
-//		debounce_flag = true;
-//	}
 }
+
+
 /* USER CODE END 4 */
 
 /**
@@ -817,4 +934,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-

@@ -8,6 +8,7 @@
 #include "timer_utils.h"
 #include <math.h>
 
+static uint32_t WAVEGEN_CLK;
 
 void timer_utils_init_wavegen_clk() {
 	WAVEGEN_CLK = HAL_RCC_GetSysClockFreq(); //set wave gen = SYSCLK

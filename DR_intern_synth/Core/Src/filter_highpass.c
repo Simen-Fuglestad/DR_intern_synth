@@ -7,9 +7,9 @@
 
 
 #include "filter.h"
-static const float C1_DEFAULT = 4E-5;
+static const float C1_DEFAULT = 6E-6;
 
-void filter_highpass_RC_init(filter_t* filter, float delta_t, float fc, float gain) {
+void filter_highpass_RC_init(filter_t* filter, float fc, float gain) {
 	static uint16_t y[0xFF];
 	static uint16_t x[0xFF];
 	static float R[0xFF];
@@ -29,10 +29,10 @@ void filter_highpass_RC_init(filter_t* filter, float delta_t, float fc, float ga
 	filter->gain = gain;
 
 	filter->coeff = coeff;
-	filter_highpass_RC_set_coeffs(filter, delta_t, R1, C1_DEFAULT);
+	filter_highpass_RC_set_coeffs(filter, DELTA_T_DEFAULT, R1, C1_DEFAULT);
 
 	filter->fc = fc;
-	filter->delta_t = delta_t;
+	filter->delta_t = DELTA_T_DEFAULT;
 }
 
 uint16_t filter_highpass_RC_get_next(filter_t* filter, uint16_t x) {

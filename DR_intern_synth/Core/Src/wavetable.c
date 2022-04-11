@@ -10,7 +10,6 @@
 #include <math.h>
 //#include <stdio.h>
 #include <string.h>
-#include "math_utils.h"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -63,7 +62,6 @@ void wavetable_create_square(uint16_t* out, uint16_t ref_v, uint16_t ns, float a
 
 void wavetable_create_triangle(uint16_t* out, uint16_t ref_v, uint16_t ns, float amp) {
 	for (int i = 0; i < ns; i++) {
-//		float tri = ((float)2/M_PI) * asin(sin(((2 * M_PI)/ns) * i));
 		float tri = 2.0f * fabs((float)i/ns - floor((float)i/ns + 0.5));
 
 		float scaled = tri * ((ref_v + 1)/2);

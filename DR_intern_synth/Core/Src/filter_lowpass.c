@@ -7,17 +7,34 @@
 
 #include "filter.h"
 
-static const float C1_DEFAULT = 6E-5;
+static const float C1_DEFAULT = 6E-7;
+
 
 uint16_t filter_lowpass_RC_get_next(filter_t* filter, uint16_t x) {
+	float c1 = filter->coeff[0];
+	float c2 = filter->coeff[1];
+	uint16_t prev_y = filter->prev_y[0];
 	uint16_t y = filter->coeff[0] * x + filter->coeff[1] * filter->prev_y[0];
 	filter->prev_y[0] = y;
 
 	return y;
 }
 
+filter_lp_RC1_t filter_lowpass_RC_create(float fc, float gain) {
+	filter_lp_RC1_t filter;
+	filter.fc = fc;
+	filter.C = C1_DEFAULT;
+	filter.R = filter_lowpass_compute_R(fc, C1_DEFAULT);
+	filter.prev_y = 0;
+	filter.c1 = DELTA_T_DEFAULT/(DELTA_T_DEFAULT + filter.R*C1_DEFAULT);
+	filter.c2 = (filter.R * C1_DEFAULT) / (DELTA_T_DEFAULT + filter.R * C1_DEFAULT);
+	filter.delta_t = DELTA_T_DEFAULT;
+
+	return filter;
+}
+
 void filter_lowpass_RC_init(
-		filter_t* filter, float delta_t, float fc, float gain) {
+		filter_t* filter, float fc, float gain) {
 
 	static uint16_t y[0xFF];
 	static float R[0xFF];
@@ -37,10 +54,10 @@ void filter_lowpass_RC_init(
 	filter->gain = gain;
 
 	filter->coeff = coeff;
-	filter_lowpass_RC_set_coeffs(filter, delta_t, R1, C1_DEFAULT);
+	filter_lowpass_RC_set_coeffs(filter, DELTA_T_DEFAULT, R1, C1_DEFAULT);
 
 	filter->fc = fc;
-	filter->delta_t = delta_t;
+	filter->delta_t = DELTA_T_DEFAULT;
 }
 
 float filter_lowpass_RC_get_fc(filter_t* filter) {

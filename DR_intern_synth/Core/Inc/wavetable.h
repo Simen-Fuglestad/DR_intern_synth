@@ -8,7 +8,7 @@
 #ifndef INC_WAVETABLE_H_
 #define INC_WAVETABLE_H_
 
-#define I2S_SAMPLE_RATE 48000
+#define I2S_SAMPLE_RATE 44000
 #define MAX_SAMPLE_SIZE_F (I2S_SAMPLE_RATE)/16.352
 #define MAX_SAMPLE_SIZE 2936
 
@@ -23,8 +23,6 @@ typedef struct {
 	uint16_t* wave_data;
 	note_t note;
 } wavetable_tone_t;
-
-wavetable_tone_t wavetable_tone_bank[N_OCTAVES * N_SEMITONES];
 
 void wavetable_init(uint16_t* wt_sine, uint16_t* wt_square, uint16_t* wt_tri, uint16_t* wt_saw, uint16_t ref_v);
 

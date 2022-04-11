@@ -13,3 +13,20 @@ uint16_t filter_apply(filter_f** filter_functions, filter_t* filters, uint16_t i
 	}
 	return out;
 }
+
+void filter_init(filter_t* filter, filter_response_t response, uint8_t order, float fc, float gain) {
+	switch(response) {
+	case LOWPASS:
+		filter_lowpass_RC_init(filter, fc, gain);
+		break;
+	case HIGHPASS:
+		filter_highpass_RC_init(filter, fc, gain);
+		break;
+	case BANDPASS:
+		break;
+	case NOTCH:
+		break;
+	default:
+		;
+	}
+}

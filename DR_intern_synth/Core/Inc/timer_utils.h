@@ -10,8 +10,6 @@
 
 #include <main.h>
 
-uint32_t WAVEGEN_CLK;
-
 void timer_utils_init_wavegen_clk();
 
 void init_timer(TIM_HandleTypeDef* htim);

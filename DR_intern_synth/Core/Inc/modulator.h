@@ -22,6 +22,7 @@ typedef struct {
 	uint16_t* out_wave;
 	float current_index;
 	float index_step;
+	float gain;
 } am_modulator_t;
 
 typedef struct {
