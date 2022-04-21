@@ -257,8 +257,10 @@ static USBH_StatusTypeDef USBH_MIDI_Process (USBH_HandleTypeDef *phost)
 
 	case MIDI_TRANSFER_DATA:
 
-		MIDI_ProcessTransmission(phost);
+//		MIDI_ProcessTransmission(phost);
+//		HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
 		MIDI_ProcessReception(phost);
+//		HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 		break;
 
 	case MIDI_ERROR_STATE:
@@ -471,18 +473,18 @@ static void MIDI_ProcessReception(USBH_HandleTypeDef *phost)
 		MIDI_Handle->data_rx_state = MIDI_RECEIVE_DATA_WAIT;
 		//BSP_LED_On(LED_Red); //ok only here
 
+
 		break;
 
 	case MIDI_RECEIVE_DATA_WAIT:
-
+//		HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
 		URB_Status = USBH_LL_GetURBState(phost, MIDI_Handle->InPipe);
-
+//		HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 
 
 		/*Check the status done for reception*/
 		if(URB_Status == USBH_URB_DONE )
 		{
-
 
 			length = USBH_LL_GetLastXferSize(phost, MIDI_Handle->InPipe);
 
@@ -495,12 +497,15 @@ static void MIDI_ProcessReception(USBH_HandleTypeDef *phost)
 			else
 			{
 				MIDI_Handle->data_rx_state = MIDI_IDLE;
+//				HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
 				USBH_MIDI_ReceiveCallback(phost);
+//				HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 			}
 #if (USBH_USE_OS == 1)
 			osMessagePut ( phost->os_event, USBH_CLASS_EVENT, 0);
 #endif
 		}
+
 		break;
 
 	default:

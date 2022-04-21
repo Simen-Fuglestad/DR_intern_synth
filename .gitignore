@@ -5,7 +5,7 @@
 # /DR_intern_synth/USB_HOST
 /DR_intern_synth/STM32F411VETX_FLASH.ld
 /DR_intern_synth/STM32F411VETX_RAM.ld
-/DR_intern_synth/.project
+# /DR_intern_synth/.project
 /DR_intern_synth/.mxproject
 /DR_intern_synth/.cproject
 /DR_intern_synth/.settings
