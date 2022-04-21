@@ -11,9 +11,9 @@
 #define I2S_SAMPLE_RATE 48000
 #define MAX_SAMPLE_SIZE_F (I2S_SAMPLE_RATE)/16.352
 //#define MAX_SAMPLE_SIZE 2935 	//48khz mono
-//#define MAX_SAMPLE_SIZE 5871 	//48khx stereo
+#define MAX_SAMPLE_SIZE 5871 	//48khz stereo
 //#define MAX_SAMPLE_SIZE 2691 	//44khz mono
-#define MAX_SAMPLE_SIZE 5382 	//44Khz stereo
+//#define MAX_SAMPLE_SIZE 5381 	//44Khz stereo
 
 #include <stdint.h>
 #include "note_frequency.h"

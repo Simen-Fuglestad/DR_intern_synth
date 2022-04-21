@@ -16,7 +16,7 @@
 #define N_NOTES				7 //full notes
 #define N_FLATS				5
 #define N_SEMITONES 		12
-#define OCTAVE_STEP 		1.0594 //octaves are divided into 12 semitones, 2^(1/12)
+#define OCTAVE_STEP 		1.059463 //octaves are divided into 12 semitones, 2^(1/12)
 #define NOTE_C0_440HZ		16.352 // use as basis for building 440hz lookup table
 #define NOTE_Db0			NOTE_C0_440HZ * OCTAVE_STEP
 #define NOTE_D0				NOTE_Db0 * OCTAVE_STEP

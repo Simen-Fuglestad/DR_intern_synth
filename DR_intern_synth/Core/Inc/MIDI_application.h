@@ -37,11 +37,9 @@ extern int8_t currentNote;
 extern int8_t velocity;
 
 /* Exported functions ------------------------------------------------------- */
-
-//void MagicFX(uint8_t val);
-//void MagicPatch(uint8_t val);
-//void Reset_notes_On(void);
 void MIDI_Application(void);
+
+uint8_t MIDI_get_key_pressed(void);
 
 /*------------------------------------------------------------------------------*/
 #endif /* MIDI_APPLICATION_H_ */

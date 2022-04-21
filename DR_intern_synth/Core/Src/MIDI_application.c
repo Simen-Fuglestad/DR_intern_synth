@@ -16,9 +16,10 @@
 #define RX_BUFF_SIZE 64 /* USB MIDI buffer : max received data 64 bytes */
 
 uint8_t MIDI_RX_Buffer[RX_BUFF_SIZE]; // MIDI reception buffer
+uint8_t MIDI_key_pressed;
 
 /* Private function prototypes -----------------------------------------------*/
-void ProcessReceivedMidiDatas(void);
+void ProcessReceivedMidiData(void);
 
 /*-----------------------------------------------------------------------------*/
 /**
@@ -53,9 +54,19 @@ void MIDI_Application(void)
  */
 void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
 {
-//	ProcessReceivedMidiDatas();
-	if (MIDI_RX_Buffer[0] == 0x0E) {
-		int br_test = 0;
+//	ProcessReceivedMidiData();
+	if (MIDI_RX_Buffer[0] == 0x09) {
+		MIDI_key_pressed = MIDI_RX_Buffer[2];
+	} else if (MIDI_RX_Buffer[0] == 0x08) {
+		MIDI_key_pressed = 0;
 	}
 	USBH_MIDI_Receive(&hUsbHostFS, MIDI_RX_Buffer, RX_BUFF_SIZE); // start a new reception
+}
+
+uint8_t MIDI_get_key_pressed() {
+	return MIDI_key_pressed;
+}
+
+void ProcessReceivedMidiData() {
+
 }

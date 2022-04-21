@@ -8,6 +8,12 @@
 #ifndef INC_INPUT_HANDLER_H_
 #define INC_INPUT_HANDLER_H_
 
+//MIDI code index numbers
+
+#define NOTE_OFF 	0x08
+#define NOTE_ON		0x09
+#define POLY_KEY	0x0A
+
 #include "note_frequency.h"
 #include "main.h"
 
