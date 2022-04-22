@@ -17,6 +17,7 @@
 
 uint8_t MIDI_RX_Buffer[RX_BUFF_SIZE]; // MIDI reception buffer
 uint8_t MIDI_key_pressed;
+uint8_t MIDI_key_released = 1;
 
 /* Private function prototypes -----------------------------------------------*/
 void ProcessReceivedMidiData(void);
@@ -57,14 +58,24 @@ void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
 //	ProcessReceivedMidiData();
 	if (MIDI_RX_Buffer[0] == 0x09) {
 		MIDI_key_pressed = MIDI_RX_Buffer[2];
+		MIDI_key_released = 0;
 	} else if (MIDI_RX_Buffer[0] == 0x08) {
-		MIDI_key_pressed = 0;
+//		MIDI_key_pressed = 0;
+		if(MIDI_RX_Buffer[2] == MIDI_key_pressed) {
+			MIDI_key_released = 1;
+			MIDI_key_pressed = 0;
+		}
+
 	}
 	USBH_MIDI_Receive(&hUsbHostFS, MIDI_RX_Buffer, RX_BUFF_SIZE); // start a new reception
 }
 
-uint8_t MIDI_get_key_pressed() {
+uint8_t MIDI_get_key_pressed(void) {
 	return MIDI_key_pressed;
+}
+
+uint8_t MIDI_get_key_released(void) {
+	return MIDI_key_released;
 }
 
 void ProcessReceivedMidiData() {

@@ -117,7 +117,7 @@ float wavetable_outwave_update(
 	for (uint16_t i = out_start; i < out_len; i ++) {
 		out[i] = wavetable[(uint16_t)next_index];
 		next_index+=index_step;
-		if (next_index > MAX_SAMPLE_SIZE) {
+		if (next_index >= MAX_SAMPLE_SIZE) {
 			next_index = next_index - MAX_SAMPLE_SIZE;
 		}
 	}

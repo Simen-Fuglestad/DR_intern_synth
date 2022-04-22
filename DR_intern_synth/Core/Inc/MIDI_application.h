@@ -40,6 +40,7 @@ extern int8_t velocity;
 void MIDI_Application(void);
 
 uint8_t MIDI_get_key_pressed(void);
+uint8_t MIDI_get_key_released(void);
 
 /*------------------------------------------------------------------------------*/
 #endif /* MIDI_APPLICATION_H_ */

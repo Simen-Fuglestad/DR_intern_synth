@@ -85,7 +85,8 @@ uint16_t out_wave_tri[I2S_OUT_N];
 uint16_t out_wave_saw[I2S_OUT_N];
 
 float in_wave_index = 0;
-float index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_C);
+//float index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_C);
+float index_step = 0;
 
 uint16_t i2s_it_index = 0;
 
@@ -110,7 +111,7 @@ bool timer_updated = false;
 note_t nf_map_440hz[N_OCTAVES * N_SEMITONES];
 
 uint16_t debounce_cnt = 0;
-uint32_t debounce_limit = 0xFFF;
+uint32_t debounce_limit = 0x1F;
 bool debounce_flag = false;
 
 float fc_hp;
@@ -271,30 +272,38 @@ int main(void)
 
 		input_key = MIDI_get_key_pressed();
 		if (input_key) {
+//			HAL_I2S_DMAResume(&hi2s3);
 			float exponent = (float)input_key - 69.0f;
 			exponent = exponent/12;
 			float input_f = 440.0f * powf(2.0f, exponent);
 			index_step = input_f/f_base;
 			input_active = true;
+//			debounce_flag = true;
 		} else {
 			input_active = false;
 		}
 
 		if (input_active) {
-
-		} else {
-			memset(i2s_out, 0, I2S_OUT_N * sizeof(uint16_t));
-//			index_step = 0;
-			//			HAL_I2S_DMAStop(&hi2s3);
+			//filters go here
+		} else if (MIDI_get_key_released()){
+//			uint16_t current_val = out_wave_sine[(uint16_t)in_wave_index];
+//			for (uint16_t i = 0; i < I2S_OUT_N; i++) {
+//				i2s_out[i] = 0;
+//			}
+//			in_wave_index = 0;
+			index_step = 0;
+//			HAL_I2S_DMAPause(&hi2s3);
 		}
 
-		if (i2s_tx_half && input_active) {
-			in_wave_index = wavetable_outwave_update(i2s_out, 0, I2S_OUT_N/2, out_wave_sine, in_wave_index, index_step);
+		if (i2s_tx_half) {
+			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
+			in_wave_index = wavetable_outwave_update(i2s_out, 0, I2S_OUT_N/2, out_wave_tri, in_wave_index, index_step);
 			i2s_tx_half = false;
 		}
 
-		if (i2s_tx_cplt && input_active) {
-			in_wave_index = wavetable_outwave_update(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_sine, in_wave_index, index_step);
+		if (i2s_tx_cplt) {
+			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
+			in_wave_index = wavetable_outwave_update(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_tri, in_wave_index, index_step);
 			i2s_tx_cplt = false;
 		}
 
