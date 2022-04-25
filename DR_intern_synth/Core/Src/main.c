@@ -34,6 +34,7 @@
 #include "mixer.h"
 #include "usbh_MIDI.h"
 #include "MIDI_application.h"
+#include "output_handler.h"
 //#include "oscillator.h"
 
 /* USER CODE END Includes */
@@ -88,6 +89,10 @@ float in_wave_index = 0;
 //float index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_C);
 float index_step = 0;
 
+#define n_voices 10
+float input_index_steps[n_voices];
+float input_index_trackers[n_voices];
+
 uint16_t i2s_it_index = 0;
 
 bool i2s_tx_cplt = false;
@@ -97,8 +102,6 @@ bool key_pressed = false;
 
 bool i2s_tx_rdy = false;
 bool i2s_next_out_rdy = false;
-
-extern uint8_t* MIDI_RX_Buffer;
 
 waveshape_enum current_wave_out = SINE;
 bool cycle_waveshape_flag = false;
@@ -111,7 +114,7 @@ bool timer_updated = false;
 note_t nf_map_440hz[N_OCTAVES * N_SEMITONES];
 
 uint16_t debounce_cnt = 0;
-uint32_t debounce_limit = 0x1F;
+uint32_t debounce_limit = 0x1FF;
 bool debounce_flag = false;
 
 float fc_hp;
@@ -132,15 +135,18 @@ filter_t filter_RC_highpass;
 am_modulator_t mod1;
 am_modulator_t mod2;
 am_modulator_t mod3;
+
+am_modulator_t am_modulators[0xFF];
 uint8_t chord_progress = 0;
 
 uint16_t buff_sz = 18;
 uint16_t adc_dma_buff[18];
 
 bool input_active;
-int input_key;
+uint8_t input_keys[0xff];
+uint8_t keys_pressed = 0;
 
-USBH_HandleTypeDef hUSBHost; /* USB Host handle */
+float some_test_array[2];
 
 /* USER CODE END PV */
 
@@ -228,13 +234,16 @@ int main(void)
 	ns = round(2*I2S_SAMPLE_RATE/f_base);
 
 	wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL, I2S_OUT_N, 1);
-	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL, I2S_OUT_N, 1);
+	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL, I2S_OUT_N, 0.4);
 	wavetable_create(TRIANGLE, out_wave_tri, REF_V_DIGITAL, I2S_OUT_N, 1);
-	wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL, I2S_OUT_N, 1);
+	wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL, I2S_OUT_N, 0.4);
 
 	am_mod_init(&mod1, out_wave_sine, SEMITONE_E, 4);
 	am_mod_init(&mod2, out_wave_sine, SEMITONE_G, 4);
 	am_mod_init(&mod3, out_wave_sine, SEMITONE_B, 4);
+
+	input_index_steps[0] = 440.0f/f_base;
+	input_index_steps[1] = 329.63/f_base;
 
 	fc_lp = mixer_get_filter_fc_low();
 	fc_hp = mixer_get_filter_fc_high();
@@ -248,7 +257,6 @@ int main(void)
 
 
 	HAL_StatusTypeDef tx_init_status = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)i2s_out, I2S_OUT_N);
-	//	HAL_I2S_Transmit_DMA(&hi2s3, out_wave_sine, ns);
 
 	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_0);
 
@@ -261,7 +269,6 @@ int main(void)
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 
-
 	while (1)
 	{
 		MIDI_Application();
@@ -269,67 +276,48 @@ int main(void)
 		MX_USB_HOST_Process();
 
 		/* USER CODE BEGIN 3 */
-
-		input_key = MIDI_get_key_pressed();
-		if (input_key) {
-//			HAL_I2S_DMAResume(&hi2s3);
-			float exponent = (float)input_key - 69.0f;
-			exponent = exponent/12;
-			float input_f = 440.0f * powf(2.0f, exponent);
-			index_step = input_f/f_base;
-			input_active = true;
-//			debounce_flag = true;
-		} else {
-			input_active = false;
-		}
-
-		if (input_active) {
-			//filters go here
-		} else if (MIDI_get_key_released()){
-//			uint16_t current_val = out_wave_sine[(uint16_t)in_wave_index];
-//			for (uint16_t i = 0; i < I2S_OUT_N; i++) {
-//				i2s_out[i] = 0;
-//			}
-//			in_wave_index = 0;
-			index_step = 0;
-//			HAL_I2S_DMAPause(&hi2s3);
-		}
+		keys_pressed = MIDI_update_input_f(input_index_steps, f_base);
 
 		if (i2s_tx_half) {
-			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
-			in_wave_index = wavetable_outwave_update(i2s_out, 0, I2S_OUT_N/2, out_wave_tri, in_wave_index, index_step);
+			if (current_wave_out == SINE) {
+				output_handler_outwave_update(
+						i2s_out, 0, I2S_OUT_N/2, out_wave_sine, input_index_trackers, input_index_steps, n_voices);
+				HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
+			}
+			else if (current_wave_out == SQUARE) {
+				output_handler_outwave_update(
+						i2s_out, 0, I2S_OUT_N/2, out_wave_square, input_index_trackers, input_index_steps, n_voices);
+			}
+			else if (current_wave_out == TRIANGLE) {
+				output_handler_outwave_update(
+						i2s_out, 0, I2S_OUT_N/2, out_wave_tri, input_index_trackers, input_index_steps, n_voices);
+			}
+			else if (current_wave_out == SAWTOOTH) {
+				output_handler_outwave_update(
+						i2s_out, 0, I2S_OUT_N/2, out_wave_saw, input_index_trackers, input_index_steps, n_voices);
+			}
 			i2s_tx_half = false;
 		}
 
 		if (i2s_tx_cplt) {
-			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
-			in_wave_index = wavetable_outwave_update(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_tri, in_wave_index, index_step);
+			if (current_wave_out == SINE) {
+				output_handler_outwave_update(
+						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_sine, input_index_trackers, input_index_steps, n_voices);
+			}
+			else if (current_wave_out == SQUARE) {
+				output_handler_outwave_update(
+						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_square, input_index_trackers, input_index_steps, n_voices);
+			}
+			else if (current_wave_out == TRIANGLE) {
+				output_handler_outwave_update(
+						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_tri, input_index_trackers, input_index_steps, n_voices);
+			}
+			else if (current_wave_out == SAWTOOTH) {
+				output_handler_outwave_update(
+						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_saw, input_index_trackers, input_index_steps, n_voices);
+			}
 			i2s_tx_cplt = false;
 		}
-
-
-
-
-
-		//		if (MIDI_RX_Buffer[2] == 69) {
-		//			index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_A);
-		//		}
-
-		//		if (i2s_tx_cplt) {
-		//			uint16_t out_val = out_wave_sine[(uint16_t)floor(out_index_f)];
-		//    	out_val = am_modulate(&mod1, out_val, ns);
-		//    	out_val = am_modulate(&mod2, out_val, ns);
-		//    	out_val = am_modulate(&mod3, out_val, ns);
-		//    	out_val = filter_apply(filter_functions, filters, out_val, 1);
-		//			i2s_out[0] = out_val;
-		//			i2s_out[1] = out_val;
-		//			out_index_f = out_index_f + index_step;
-		//			if (out_index_f >= ns) {
-		//				out_index_f = out_index_f - ns;
-		//			}
-		//
-		//			i2s_tx_cplt = false;
-		//		}
 
 		if (debounce_flag) {
 			debounce_cnt++;
@@ -339,21 +327,10 @@ int main(void)
 			}
 		}
 
-		if (key_pressed) {
+		if (key_pressed && !debounce_flag) {
+			debounce_flag = true;
+			current_wave_out = cycle_waveshape(current_wave_out);
 			key_pressed = false;
-			if(chord_progress == 0) {
-				index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_F);
-				//				float wavetable_outwave_update(i2s_out, I2S_OUT_N, out_wave_sine, 0, index_step);
-				//				wavetable_create(SINE, i2s_out, REF_V_DIGITAL, ns_a4, 1);
-				chord_progress = 1;
-			} else {
-				index_step = pow(OCTAVE_STEP, 12*8 + SEMITONE_C);
-				chord_progress = 0;
-				//				wavetable_create(SINE, i2s_out, REF_V_DIGITAL, ns_c4, 1);
-			}
-
-
-			//update buffer
 		}
 
 

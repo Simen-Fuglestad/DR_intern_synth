@@ -22,9 +22,8 @@ uint16_t am_modulate(am_modulator_t* mod, uint16_t in, float ns) {
 		mod->current_index = index - ns;
 	}
 	else {
-		mod->current_index = mod->current_index + mod->index_step;
+		mod->current_index = index;
 	}
-
 	return result;
 }
 

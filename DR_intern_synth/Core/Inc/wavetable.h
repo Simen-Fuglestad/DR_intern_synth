@@ -8,6 +8,10 @@
 #ifndef INC_WAVETABLE_H_
 #define INC_WAVETABLE_H_
 
+/*
+ * Collection of methods and helper constants to create wave tables of various shapes.
+ */
+
 #define I2S_SAMPLE_RATE 48000
 #define MAX_SAMPLE_SIZE_F (I2S_SAMPLE_RATE)/16.352
 //#define MAX_SAMPLE_SIZE 2935 	//48khz mono
@@ -45,14 +49,5 @@ void wavetable_create_triangle(
 
 void wavetable_create_sawtooth(
 		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
-
-float wavetable_outwave_update(
-		uint16_t* out, uint16_t out_start, uint16_t out_len, uint16_t* in, float in_start, float index_step);
-
-void wavetable_period_copy(
-		uint16_t* out, uint16_t* in, uint16_t out_len, uint16_t in_len);
-
-void wavetable_set_f(
-		uint16_t* out, float index_step, uint16_t len);
 
 #endif /* INC_WAVETABLE_H_ */

@@ -10,7 +10,6 @@
 
 #include <stdint.h>
 #include <math.h>
-#include "wavetable.h"
 #include "note_frequency.h"
 #include <string.h>
 

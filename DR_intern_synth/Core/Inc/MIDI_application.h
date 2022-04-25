@@ -8,6 +8,25 @@
 #ifndef MIDI_APPLICATION_H_
 #define MIDI_APPLICATION_H_
 
+//MIDI Code Index Classifications
+
+#define MIDI_CODE_2B_MSG			0x02
+#define MIDI_CODE_3B_MSG			0x03
+#define MIDI_CODE_SYSEX_SC			0x04 //start/continue
+#define MIDI_CODE_1BSCM				0x05 //Single-byte system common message
+#define MIDI_CODE_SYSEX_END_B		0x05 //SysEx ends with following single byte
+#define MIDI_CODE_SYSEX_END_2B		0x06 //SysEx ends with following 2 bytes
+#define MIDI_CODE_SYSEX_END_3B		0x07 //SysEx ends with following 3 bytes
+#define MIDI_CODE_NOTE_OFF			0x08
+#define MIDI_CODE_NOTE_ON			0x09
+#define MIDI_CODE_POLY_KEY_PRESS	0x0A
+#define MIDI_CODE_CTRL_CHANGE		0x0B
+#define MIDI_CODE_PROGRAM_CHANGE	0x0C
+#define MIDI_CODE_CH_PRESSURE		0x0D
+#define MIDI_CODE_PITCH_BEND		0x0E
+#define MIDI_CODE_1B				0x0F //Single byte
+
+
 /* Includes ------------------------------------------------------------------*/
 
 #include "stdio.h"
@@ -39,8 +58,11 @@ extern int8_t velocity;
 /* Exported functions ------------------------------------------------------- */
 void MIDI_Application(void);
 
+uint8_t* MIDI_get_input_keys(void);
+uint8_t MIDI_update_input_f(float* f, float f_base);
 uint8_t MIDI_get_key_pressed(void);
 uint8_t MIDI_get_key_released(void);
+float MIDI_key2f(uint8_t);
 
 /*------------------------------------------------------------------------------*/
 #endif /* MIDI_APPLICATION_H_ */
