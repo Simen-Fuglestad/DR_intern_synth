@@ -59,7 +59,7 @@ extern int8_t velocity;
 void MIDI_Application(void);
 
 uint8_t* MIDI_get_input_keys(void);
-uint8_t MIDI_update_input_f(float* f, float f_base);
+void MIDI_update_input_f(float* f, float f_base);
 uint8_t MIDI_get_key_pressed(void);
 uint8_t MIDI_get_key_released(void);
 float MIDI_key2f(uint8_t);

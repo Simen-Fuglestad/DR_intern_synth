@@ -89,9 +89,9 @@ float in_wave_index = 0;
 //float index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_C);
 float index_step = 0;
 
-#define n_voices 10
-float input_index_steps[n_voices];
-float input_index_trackers[n_voices];
+#define n_voices 5
+float steps[n_voices];
+float trackers[n_voices];
 
 uint16_t i2s_it_index = 0;
 
@@ -145,8 +145,6 @@ uint16_t adc_dma_buff[18];
 bool input_active;
 uint8_t input_keys[0xff];
 uint8_t keys_pressed = 0;
-
-float some_test_array[2];
 
 /* USER CODE END PV */
 
@@ -234,16 +232,13 @@ int main(void)
 	ns = round(2*I2S_SAMPLE_RATE/f_base);
 
 	wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL, I2S_OUT_N, 1);
-	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL, I2S_OUT_N, 0.4);
+	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL, I2S_OUT_N, 0.2);
 	wavetable_create(TRIANGLE, out_wave_tri, REF_V_DIGITAL, I2S_OUT_N, 1);
-	wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL, I2S_OUT_N, 0.4);
+	wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL, I2S_OUT_N, 0.2);
 
 	am_mod_init(&mod1, out_wave_sine, SEMITONE_E, 4);
 	am_mod_init(&mod2, out_wave_sine, SEMITONE_G, 4);
 	am_mod_init(&mod3, out_wave_sine, SEMITONE_B, 4);
-
-	input_index_steps[0] = 440.0f/f_base;
-	input_index_steps[1] = 329.63/f_base;
 
 	fc_lp = mixer_get_filter_fc_low();
 	fc_hp = mixer_get_filter_fc_high();
@@ -276,25 +271,25 @@ int main(void)
 		MX_USB_HOST_Process();
 
 		/* USER CODE BEGIN 3 */
-		keys_pressed = MIDI_update_input_f(input_index_steps, f_base);
+		MIDI_update_input_f(steps, f_base);
 
 		if (i2s_tx_half) {
 			if (current_wave_out == SINE) {
 				output_handler_outwave_update(
-						i2s_out, 0, I2S_OUT_N/2, out_wave_sine, input_index_trackers, input_index_steps, n_voices);
+						i2s_out, 0, I2S_OUT_N/2, out_wave_sine, trackers, steps, n_voices);
 				HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 			}
 			else if (current_wave_out == SQUARE) {
 				output_handler_outwave_update(
-						i2s_out, 0, I2S_OUT_N/2, out_wave_square, input_index_trackers, input_index_steps, n_voices);
+						i2s_out, 0, I2S_OUT_N/2, out_wave_square, trackers, steps, n_voices);
 			}
 			else if (current_wave_out == TRIANGLE) {
 				output_handler_outwave_update(
-						i2s_out, 0, I2S_OUT_N/2, out_wave_tri, input_index_trackers, input_index_steps, n_voices);
+						i2s_out, 0, I2S_OUT_N/2, out_wave_tri, trackers, steps, n_voices);
 			}
 			else if (current_wave_out == SAWTOOTH) {
 				output_handler_outwave_update(
-						i2s_out, 0, I2S_OUT_N/2, out_wave_saw, input_index_trackers, input_index_steps, n_voices);
+						i2s_out, 0, I2S_OUT_N/2, out_wave_saw, trackers, steps, n_voices);
 			}
 			i2s_tx_half = false;
 		}
@@ -302,19 +297,19 @@ int main(void)
 		if (i2s_tx_cplt) {
 			if (current_wave_out == SINE) {
 				output_handler_outwave_update(
-						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_sine, input_index_trackers, input_index_steps, n_voices);
+						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_sine, trackers, steps, n_voices);
 			}
 			else if (current_wave_out == SQUARE) {
 				output_handler_outwave_update(
-						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_square, input_index_trackers, input_index_steps, n_voices);
+						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_square, trackers, steps, n_voices);
 			}
 			else if (current_wave_out == TRIANGLE) {
 				output_handler_outwave_update(
-						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_tri, input_index_trackers, input_index_steps, n_voices);
+						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_tri, trackers, steps, n_voices);
 			}
 			else if (current_wave_out == SAWTOOTH) {
 				output_handler_outwave_update(
-						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_saw, input_index_trackers, input_index_steps, n_voices);
+						i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_saw, trackers, steps, n_voices);
 			}
 			i2s_tx_cplt = false;
 		}

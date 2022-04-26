@@ -20,7 +20,7 @@ uint8_t MIDI_key_pressed;
 uint8_t MIDI_key_released = 1;
 
 
-#define n_inputs 10
+#define n_inputs 5
 uint8_t MIDI_input_keys[n_inputs];
 static uint8_t next_key_index = 0;
 static uint8_t input_key_tmp;
@@ -75,7 +75,7 @@ void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
 			if (MIDI_input_keys[k] == input_key_tmp) {
 				MIDI_input_keys[k] = 0;
 				keys_pressed--;
-				break;
+//				break;
 			}
 		}
 		break;
@@ -114,13 +114,13 @@ uint8_t* MIDI_get_input_keys(void) {
 	return MIDI_input_keys;
 }
 
-uint8_t MIDI_update_input_f(float* f_steps, float f_base) {
+void MIDI_update_input_f(float* f_steps, float f_base) {
 	for (uint8_t i = 0; i < n_inputs; i++) {
 		float f = MIDI_key2f(MIDI_input_keys[i])/f_base;
-		if (f > 0)
-			f_steps[i] = f;
+		if (f < 1)
+			f = 0;
+		f_steps[i] = f;
 	}
-	return keys_pressed;
 }
 
 uint8_t MIDI_get_key_pressed(void) {
