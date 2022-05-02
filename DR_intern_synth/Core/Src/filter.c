@@ -30,3 +30,12 @@ void filter_init(filter_t* filter, filter_response_t response, uint8_t order, fl
 		;
 	}
 }
+
+filter_lp_RC1_t* filter_get_LP() {
+	return &lp_filter;
+}
+
+filter_hp_RC1_t* filter_get_HP() {
+	return &hp_filter;
+}
+

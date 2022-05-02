@@ -8,17 +8,25 @@
 #ifndef INC_MIXER_H_
 #define INC_MIXER_H_
 
-#define MIXER_CHANNELS 		9 //==number of conversions in ADC
+#define ADC_RES				12 //adc resolution in bits
+#define ADC_DIGI_REF		4095 //maximum digital value of ADC
+#define ADC_VREF			2.9 //same as system vref
 
-#define FILTER_LOW_CHANNEL 	0
-#define GAIN_CHANNEL 		1
-#define TREMOLO_CHANNEL 	2
-#define ATTACK_CHANNEL 		3
-#define DECAY_CHANNEL		4
-#define SUSTAIN_CHANNEL		5
-#define RELEASE_CHANNEL		6
-#define LFO_CHANNEL			7
-#define FILTER_HIGH_CHANNEL	8
+#define MIXER_CHANNELS 		13 //==number of conversions in ADC
+
+#define FILTER_LOW_CHANNEL	0
+#define FILTER_HIGH_CHANNEL	1
+#define GAIN_CHANNEL 		2
+#define TREMOLO_CHANNEL 	3
+#define ATTACK_CHANNEL 		4
+#define DECAY_CHANNEL		5
+#define SUSTAIN_CHANNEL		6
+#define RELEASE_CHANNEL		7
+#define OUT_WAVE_CHANNEL	8
+#define OUT_MODE_CHANNEL	9
+#define MOD_CHANNEL			10
+#define LFO_CHANNEL			11
+#define PITCH_CHANNEL		12
 
 #include "main.h"
 #include <stdbool.h>

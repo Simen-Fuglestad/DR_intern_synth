@@ -39,7 +39,7 @@ void wavetable_create_sine(uint16_t* out, uint16_t ref_v, uint16_t ns, float amp
 
 	for (int i = 0; i < ns; i++) {
         float sine = sin((i * (2*M_PI)/ns));
-        float scaled = sine * ((ref_v)/2);
+        float scaled = sine * ((ref_v)/2); //divide by 2 to dampen SPL
 
         uint16_t s = (uint16_t)(scaled + ref_v/2) * amp;
 
@@ -62,9 +62,9 @@ void wavetable_create_triangle(uint16_t* out, uint16_t ref_v, uint16_t ns, float
 	for (int i = 0; i < ns; i++) {
 		float tri = 2.0f * fabs((float)i/ns - floor((float)i/ns + 0.5));
 
-		float scaled = tri * ((ref_v + 1)/2);
+		float scaled = tri * ((ref_v));
 
-		uint16_t s = (uint16_t)(scaled + ref_v/2) * amp;
+		uint16_t s = (uint16_t)(scaled + ref_v) * amp;
 		out[i] = s;
 	}
 }

@@ -56,6 +56,9 @@ typedef struct {
 	float* coeff;
 } filter_t;
 
+static filter_lp_RC1_t lp_filter;
+static filter_hp_RC1_t hp_filter;
+
 typedef uint16_t (filter_f)(filter_t*, uint16_t);
 
 uint16_t filter_apply(filter_f** filter_functions, filter_t* filters, uint16_t inp, uint8_t nf);

@@ -18,8 +18,9 @@ void mixer_init(ADC_HandleTypeDef* adc_handle) {
 
 void mixer_DMA_start(TIM_HandleTypeDef* htim) {
 	if (adc_ptr) {
-		HAL_TIM_Base_Start(htim);
-		HAL_ADC_Start_DMA(adc_ptr, (uint32_t*)mixer_DMA, MIXER_CHANNELS);
+		HAL_StatusTypeDef tim_init = HAL_TIM_Base_Start_IT(htim);
+		HAL_StatusTypeDef adc_init = HAL_ADC_Start_DMA(adc_ptr, (uint32_t*)mixer_DMA, MIXER_CHANNELS);
+		int a= adc_init;
 	}
 }
 
@@ -67,10 +68,15 @@ void mixer_update(uint16_t* fc_lp) {
 //	fc_lp =
 }
 
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
 	if (hadc == adc_ptr) {
-		mixer_update_flag = true;
 	}
 }
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+	if (hadc == adc_ptr) {
+	}
+}
+
 
 

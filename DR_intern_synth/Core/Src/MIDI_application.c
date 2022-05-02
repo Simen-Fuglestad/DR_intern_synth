@@ -70,12 +70,13 @@ void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
 //			MIDI_key_released = 1;
 //			MIDI_key_pressed = 0;
 //		}
-		input_key_tmp = MIDI_RX_Buffer[2];
-		for (uint8_t k = 0; k < n_inputs; k++) {
-			if (MIDI_input_keys[k] == input_key_tmp) {
-				MIDI_input_keys[k] = 0;
-				keys_pressed--;
-//				break;
+		if (keys_pressed > 0) {
+			input_key_tmp = MIDI_RX_Buffer[2];
+			for (uint8_t k = 0; k < n_inputs; k++) {
+				if (MIDI_input_keys[k] == input_key_tmp) {
+					MIDI_input_keys[k] = 0;
+					keys_pressed--;
+				}
 			}
 		}
 		break;
@@ -84,14 +85,16 @@ void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
 //		MIDI_key_pressed = MIDI_RX_Buffer[2];
 //		MIDI_key_released  = 0;
 
-		while(MIDI_input_keys[next_key_index] != 0) {
-			next_key_index++;
+		if (keys_pressed < n_inputs) {
+			while(MIDI_input_keys[next_key_index] != 0) {
+				next_key_index++;
+			}
+
+			MIDI_input_keys[next_key_index] = MIDI_RX_Buffer[2];
+			keys_pressed++;
+
+			next_key_index = 0;
 		}
-
-		MIDI_input_keys[next_key_index] = MIDI_RX_Buffer[2];
-		keys_pressed++;
-
-		next_key_index = 0;
 
 		break;
 	case MIDI_CODE_POLY_KEY_PRESS: ; //currently not registering any from microkey S25
@@ -136,6 +139,10 @@ float MIDI_key2f(uint8_t key) {
 	exponent = exponent/12;
 	return 440 * powf(2, exponent);
 
+}
+
+uint8_t MIDI_get_n_voices() {
+	return n_inputs;
 }
 
 void ProcessReceivedMidiData() {
