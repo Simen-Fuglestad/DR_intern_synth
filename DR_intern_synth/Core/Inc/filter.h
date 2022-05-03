@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <math.h>
+#include <stdbool.h>
 
 //defines
 
@@ -22,7 +23,7 @@ static const float DELTA_T_DEFAULT = 1.0f/10000;
 
 typedef struct {
 	uint16_t prev_y;
-	float fc;
+	uint16_t fc;
 	float delta_t;
 	float R;
 	float C;
@@ -56,34 +57,35 @@ typedef struct {
 	float* coeff;
 } filter_t;
 
-static filter_lp_RC1_t lp_filter;
-static filter_hp_RC1_t hp_filter;
-
 typedef uint16_t (filter_f)(filter_t*, uint16_t);
 
-uint16_t filter_apply(filter_f** filter_functions, filter_t* filters, uint16_t inp, uint8_t nf);
-void filter_init(filter_t* filter, filter_response_t response, uint8_t order, float fc, float gain);
-
+uint16_t filter_apply(uint16_t in);
 // Low pass
 
-void filter_lowpass_RC_init(filter_t* filter, float fc, float gain);
+void filter_lowpass_RC_init(float fc, float gain);
+void filter_lowpass_RC_deinit();
 
-uint16_t filter_lowpass_RC_get_next(filter_t* filter, uint16_t x);
+void filter_lowpass_update();
 
-void filter_lowpass_RC_set_R(filter_t* filter,  float R);
-void filter_lowpass_RC_set_C(filter_t* filter, float C);
-void filter_lowpass_RC_set_coeffs(filter_t* filter, float delta_t, float R, float C);
+uint16_t filter_lowpass_RC_get_next(uint16_t x);
 
-float filter_lowpass_RC_get_fc(filter_t* filter);
-float filter_lowpass_compute_fc(float R, float C);
+void filter_lowpass_RC_set_R(float R);
+void filter_lowpass_RC_set_C(float C);
+void filter_lowpass_RC_set_coeffs(uint16_t fc);
+void filter_lowpass_set_active(bool b);
+
+bool filter_lowpass_get_active();
+uint16_t filter_lowpass_RC_get_fc();
+uint16_t filter_lowpass_compute_fc(float R, float C);
 float filter_lowpass_compute_R(float fc, float C);
 float filter_lowpass_compute_C(float fc, float R);
 
-filter_lp_RC1_t filter_lowpass_RC_create(float fc, float gain);
 
 // High pass
 
 void filter_highpass_RC_init(filter_t* filter, float fc, float gain);
+
+void filter_highpass_update();
 
 uint16_t filter_highpass_RC_get_next(filter_t* filter, uint16_t x);
 

@@ -6,88 +6,90 @@
  */
 
 #include "filter.h"
+#include "mixer.h"
 
+static filter_lp_RC1_t lp_filter;
+static bool lp_active;
 static const float C1_DEFAULT = 6E-7;
 
-
-uint16_t filter_lowpass_RC_get_next(filter_t* filter, uint16_t x) {
-	float c1 = filter->coeff[0];
-	float c2 = filter->coeff[1];
-	uint16_t prev_y = filter->prev_y[0];
-	uint16_t y = filter->coeff[0] * x + filter->coeff[1] * filter->prev_y[0];
-	filter->prev_y[0] = y;
-
-	return y;
+void filter_lowpass_RC_init(float fc, float gain) {
+	lp_filter.C = C1_DEFAULT;
+	lp_filter.R = filter_lowpass_compute_R(fc, C1_DEFAULT);
+	filter_lowpass_RC_set_coeffs(fc);
+	lp_filter.gain = gain;
+	lp_active = true;
 }
 
-filter_lp_RC1_t filter_lowpass_RC_create(float fc, float gain) {
-	filter_lp_RC1_t filter;
-	filter.fc = fc;
-	filter.C = C1_DEFAULT;
-	filter.R = filter_lowpass_compute_R(fc, C1_DEFAULT);
-	filter.prev_y = 0;
-	filter.c1 = DELTA_T_DEFAULT/(DELTA_T_DEFAULT + filter.R*C1_DEFAULT);
-	filter.c2 = (filter.R * C1_DEFAULT) / (DELTA_T_DEFAULT + filter.R * C1_DEFAULT);
-	filter.delta_t = DELTA_T_DEFAULT;
-
-	return filter;
+void filter_lowpass_update() {
+	float fc = mixer_get_filter_fc_low();
+	lp_filter.fc = fc;
+	filter_lowpass_RC_set_coeffs(fc);
 }
 
-void filter_lowpass_RC_init(
-		filter_t* filter, float fc, float gain) {
-
-	static uint16_t y[0xFF];
-	static float R[0xFF];
-	static float C[0xFF];
-	static float coeff[0xFF];
-
-	float R1 = filter_lowpass_compute_R(fc, C1_DEFAULT);
-	R[0] = R1;
-	C[0] = C1_DEFAULT;
-
-	filter->prev_y = y;
-
-	filter->response = LOWPASS;
-
-	filter->R = R;
-	filter->C = C;
-	filter->gain = gain;
-
-	filter->coeff = coeff;
-	filter_lowpass_RC_set_coeffs(filter, DELTA_T_DEFAULT, R1, C1_DEFAULT);
-
-	filter->fc = fc;
-	filter->delta_t = DELTA_T_DEFAULT;
+void filter_lowpass_RC_deinit() {
+	lp_filter.c1 = 0;
+	lp_filter.c2 = 0;
+	lp_filter.C = 0;
+	lp_filter.R = 0;
+	lp_filter.fc = 0;
+	lp_filter.gain = 0;
 }
 
-float filter_lowpass_RC_get_fc(filter_t* filter) {
-	return filter->fc;
-}
+uint16_t filter_lowpass_RC_get_next(uint16_t x) {
+	if (lp_active) {
+		uint16_t filtered = lp_filter.c1 * x + lp_filter.c2 * lp_filter.prev_y;
+		lp_filter.prev_y = filtered;
 
-void filter_lowpass_RC_set_R(filter_t* filter,  float R) {
-	float new_fc = filter_lowpass_compute_fc(R, filter->C[0]);
-	if (new_fc > 0) {
-		filter->R[0] = R;
-		filter->fc = new_fc;
-		filter_lowpass_RC_set_coeffs(filter, filter->delta_t, R, filter->C[0]);
+		return filtered;
 	}
+	return x;
 }
 
-void filter_lowpass_RC_set_C(filter_t* filter, float C) {
-	float new_fc = filter_lowpass_compute_fc(filter->R[0], C);
-	if (new_fc > 0) {
-		filter->C[0] = C;
-		filter->fc = new_fc;
-		filter_lowpass_RC_set_coeffs(filter, filter->delta_t, filter->R[0], C);
-	}
+uint16_t filter_lowpass_RC_get_fc() {
+	return lp_filter.fc;
 }
 
-void filter_lowpass_RC_set_coeffs(filter_t* filter, float delta_t, float R, float C) {
-	filter->coeff[0] = delta_t/(delta_t + R*C);
-	filter->coeff[1] = (R * C) / (delta_t + R * C);
+void filter_lowpass_RC_set_fc(uint16_t fc) {
+	lp_filter.fc = fc;
+	filter_lowpass_RC_set_coeffs(fc);
 }
 
-float filter_lowpass_compute_fc(float R, float C) {
+void filter_lowpass_RC_set_R(float R) {
+	lp_filter.R = R;
+//	float new_fc = filter_lowpass_compute_fc(R, filter->C[0]);
+//	if (new_fc > 0) {
+//		filter->R[0] = R;
+//		filter->fc = new_fc;
+//		filter_lowpass_RC_set_coeffs(filter, filter->delta_t, R, filter->C[0]);
+//	}
+}
+
+void filter_lowpass_RC_set_C(float C) {
+
+	lp_filter.C = C;
+//	float new_fc = filter_lowpass_compute_fc(filter->R[0], C);
+//	if (new_fc > 0) {
+//		filter->C[0] = C;
+//		filter->fc = new_fc;
+//		filter_lowpass_RC_set_coeffs(filter, filter->delta_t, filter->R[0], C);
+//	}
+}
+
+void filter_lowpass_RC_set_coeffs(uint16_t fc) {
+//	lp_filter.c1 = delta_t/(delta_t + R*C);
+	lp_filter.c1 = 2 * M_PI * fc * DELTA_T_DEFAULT/(2* M_PI * fc * DELTA_T_DEFAULT + 1);
+	lp_filter.c2 = (1 - lp_filter.c1);
+}
+
+void filter_lowpass_set_active(bool b) {
+	lp_active = b;
+}
+
+bool filter_lowpass_get_active() {
+	return lp_active;
+}
+
+uint16_t filter_lowpass_compute_fc(float R, float C) {
 	return 1.0f/(2 * M_PI * R * C);
 }
 

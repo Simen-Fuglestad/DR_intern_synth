@@ -18,14 +18,6 @@
 
 #define MAX_VOICES	16
 
-static uint8_t n_voices; //5
-
-static float trackers[MAX_VOICES];
-static float steps[MAX_VOICES];
-
-static float prev_index;
-static uint16_t prev_amp;
-
 void output_handler_init(uint8_t n_voices);
 
 void output_handler_outwave_AM_update(

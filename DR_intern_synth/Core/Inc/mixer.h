@@ -32,8 +32,7 @@
 #include <stdbool.h>
 
 
-void mixer_init(ADC_HandleTypeDef*  adc_handle);
-void mixer_DMA_start();
+void mixer_init(ADC_HandleTypeDef*  adc_handle, TIM_HandleTypeDef* htim);
 
 uint16_t mixer_get_filter_fc_low();
 uint16_t mixer_get_filter_fc_high();

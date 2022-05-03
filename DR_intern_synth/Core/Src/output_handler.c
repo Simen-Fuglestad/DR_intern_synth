@@ -6,8 +6,15 @@
  */
 
 #include <stdint.h>
-#include "filter.h"
 #include "output_handler.h"
+
+static uint8_t n_voices; //5
+
+static float trackers[MAX_VOICES];
+static float steps[MAX_VOICES];
+
+static float prev_index;
+static uint16_t prev_amp;
 
 void output_handler_init(uint8_t MIDI_in_voices) {
 	if (MIDI_in_voices <= MAX_VOICES) {
@@ -80,7 +87,7 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 			tracker_sync = j;
 
 		}
-		out[i] = out_val;
+		out[i] = filter_lowpass_RC_get_next(out_val);
 	}
 //	HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 
@@ -198,7 +205,7 @@ void output_handler_outwave_fupdate(
 		if (index_cnt > N_WT_SAMPLES) {
 			index_cnt = index_cnt - N_WT_SAMPLES;
 		}
-		out[i] = wavetable[(uint16_t)index_cnt];
+		out[i] = filter_lowpass_RC_get_next(wavetable[(uint16_t)index_cnt]);
 	}
 //	HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 	prev_index = index_cnt;

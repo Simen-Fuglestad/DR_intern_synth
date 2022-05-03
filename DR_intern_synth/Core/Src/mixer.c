@@ -11,16 +11,13 @@ volatile static uint16_t mixer_DMA[MIXER_CHANNELS];
 static ADC_HandleTypeDef* adc_ptr;
 static bool mixer_update_flag;
 
-void mixer_init(ADC_HandleTypeDef* adc_handle) {
+void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 	adc_ptr = adc_handle;
 	mixer_update_flag = false;
-}
 
-void mixer_DMA_start(TIM_HandleTypeDef* htim) {
 	if (adc_ptr) {
 		HAL_StatusTypeDef tim_init = HAL_TIM_Base_Start_IT(htim);
 		HAL_StatusTypeDef adc_init = HAL_ADC_Start_DMA(adc_ptr, (uint32_t*)mixer_DMA, MIXER_CHANNELS);
-		int a= adc_init;
 	}
 }
 
