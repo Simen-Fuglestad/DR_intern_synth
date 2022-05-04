@@ -6,7 +6,10 @@
  */
 #include "filter.h"
 
+
 void filter_update_all() {
-	filter_lowpass_update();
-//	filter_highpass_update();
+	if (mixer_get_update_flag()) {
+		filter_lp_update();
+		filter_hp_update();
+	}
 }

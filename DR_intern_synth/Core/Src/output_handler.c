@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include "output_handler.h"
 
-static uint8_t n_voices; //5
+static uint8_t n_voices;
 
 static float trackers[MAX_VOICES];
 static float steps[MAX_VOICES];
@@ -87,7 +87,10 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 			tracker_sync = j;
 
 		}
-		out[i] = filter_lowpass_RC_get_next(out_val);
+//		out[i] = filter_hp_RC_get_next(out[i]);
+		out[i] = filter_lp_RC_get_next(out_val);
+
+//		out[i] = out_val;
 	}
 //	HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 
@@ -205,7 +208,9 @@ void output_handler_outwave_fupdate(
 		if (index_cnt > N_WT_SAMPLES) {
 			index_cnt = index_cnt - N_WT_SAMPLES;
 		}
-		out[i] = filter_lowpass_RC_get_next(wavetable[(uint16_t)index_cnt]);
+//		out[i] = filter_lp_RC_get_next(wavetable[(uint16_t)index_cnt]);
+		out[i] = filter_hp_RC_get_next(wavetable[(uint16_t)index_cnt]);
+//		out[i] = wavetable[(uint16_t)index_cnt];
 	}
 //	HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 	prev_index = index_cnt;

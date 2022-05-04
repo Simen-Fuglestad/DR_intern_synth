@@ -44,7 +44,7 @@ uint16_t mixer_get_sustain();
 uint16_t mixer_get_release();
 uint16_t mixer_get_LFO();
 
-bool get_mixer_update_flag();
+bool mixer_get_update_flag();
 
 
 #endif /* INC_MIXER_H_ */

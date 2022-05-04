@@ -11,15 +11,10 @@
 #include <stdint.h>
 #include <math.h>
 #include <stdbool.h>
+#include <string.h>
+#include "mixer.h"
 
-//defines
-
-//type defs
-typedef enum {
-	LOWPASS, HIGHPASS, BANDPASS, NOTCH
-} filter_response_t;
-
-static const float DELTA_T_DEFAULT = 1.0f/10000;
+static const float DELTA_T_DEFAULT = 1.0f/1000;
 
 typedef struct {
 	uint16_t prev_y;
@@ -28,74 +23,58 @@ typedef struct {
 	float R;
 	float C;
 	float gain;
-	float c1;
-	float c2;
+	float alpha;
 } filter_lp_RC1_t;
 
 typedef struct {
 	uint16_t prev_y;
 	uint16_t prev_x;
-	float fc;
+	uint16_t fc;
 	float delta_t;
 	float R;
 	float C;
 	float gain;
-	float c1;
-	float c2;
+	float alpha;
 } filter_hp_RC1_t;
 
-typedef struct {
-	filter_response_t response;
-	uint8_t order;
-	uint16_t* prev_y;
-	uint16_t*prev_x;
-	float fc;
-	float delta_t;
-	float gain;
-	float* R;
-	float* C;
-	float* coeff;
-} filter_t;
+// Generic
 
-typedef uint16_t (filter_f)(filter_t*, uint16_t);
+void filter_update_all(void);
 
-uint16_t filter_apply(uint16_t in);
 // Low pass
 
-void filter_lowpass_RC_init(float fc, float gain);
-void filter_lowpass_RC_deinit();
+void filter_lp_RC_init(float fc, float gain, float delta_t);
+void filter_lp_RC_deinit(void);
 
-void filter_lowpass_update();
+void filter_lp_update(void);
 
-uint16_t filter_lowpass_RC_get_next(uint16_t x);
+void filter_lp_RC_set_R(float R);
+void filter_lp_RC_set_C(float C);
+void filter_lp_set_alpha(uint16_t fc);
+void filter_lp_set_active(bool b);
 
-void filter_lowpass_RC_set_R(float R);
-void filter_lowpass_RC_set_C(float C);
-void filter_lowpass_RC_set_coeffs(uint16_t fc);
-void filter_lowpass_set_active(bool b);
+uint16_t filter_lp_RC_get_next(uint16_t x);
+uint16_t filter_lp_RC_get_fc(void);
+bool filter_lp_get_active(void);
 
-bool filter_lowpass_get_active();
-uint16_t filter_lowpass_RC_get_fc();
-uint16_t filter_lowpass_compute_fc(float R, float C);
-float filter_lowpass_compute_R(float fc, float C);
-float filter_lowpass_compute_C(float fc, float R);
-
+uint16_t filter_lp_compute_fc(float R, float C);
+float filter_lp_compute_R(float fc, float C);
+float filter_lp_compute_C(float fc, float R);
 
 // High pass
 
-void filter_highpass_RC_init(filter_t* filter, float fc, float gain);
+void filter_hp_RC_init(float fc, float gain, float delta_t);
+void filter_hp_RC_deinit(void);
 
-void filter_highpass_update();
+void filter_hp_update(void);
 
-uint16_t filter_highpass_RC_get_next(filter_t* filter, uint16_t x);
+void filter_hp_RC_set_R(float R);
+void filter_hp_RC_set_C(float C);
+void filter_hp_set_alpha(uint16_t fc);
+void filter_hp_set_active(bool b);
 
-void filter_highpass_RC_set_R(filter_t* filter,  float R);
-void filter_highpass_RC_set_C(filter_t* filter, float C);
-void filter_highpass_RC_set_coeffs(filter_t* filter, float delta_t, float R, float C);
-
-float filter_highpass_RC_get_fc(filter_t* filter);
-float filter_highpass_compute_fc(float R, float C);
-float filter_highpass_compute_R(float fc, float C);
-float filter_highpass_compute_C(float fc, float R);
+uint16_t filter_hp_RC_get_next(uint16_t x);
+uint16_t filter_hp_RC_get_fc(void);
+bool filter_hp_RC_get_active(void);
 
 #endif /* INC_FILTER_H_ */

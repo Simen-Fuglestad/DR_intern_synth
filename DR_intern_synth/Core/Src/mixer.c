@@ -57,12 +57,12 @@ uint16_t mixer_get_LFO() {
 	return mixer_DMA[LFO_CHANNEL];
 }
 
-bool get_mixer_update_flag() {
-	return mixer_update_flag;
-}
-
-void mixer_update(uint16_t* fc_lp) {
-//	fc_lp =
+bool mixer_get_update_flag() {
+	bool tmp = mixer_update_flag;
+	if (mixer_update_flag) {
+		mixer_update_flag = false;
+	}
+	return tmp;
 }
 
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
@@ -72,6 +72,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 	if (hadc == adc_ptr) {
+		mixer_update_flag = true;
 	}
 }
 
