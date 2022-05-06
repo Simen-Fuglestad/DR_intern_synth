@@ -7,7 +7,7 @@
 #include "filter.h"
 
 
-void filter_update_all() {
+void filter_update() {
 	if (mixer_get_update_flag()) {
 		filter_lp_update();
 		filter_hp_update();

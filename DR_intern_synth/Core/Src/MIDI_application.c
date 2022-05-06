@@ -124,6 +124,8 @@ void MIDI_update_input_f(float* f_steps, float f_base) {
 			f = 0;
 		f_steps[i] = f;
 	}
+//	f_steps[0] = 440.0f/f_base;
+//	f_steps[1] = 523.25/f_base;
 }
 
 uint8_t MIDI_get_key_pressed(void) {

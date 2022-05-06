@@ -83,12 +83,12 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 				trackers[j] = trackers[j] - N_WT_SAMPLES;
 			}
 			out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
-//			prev_amp = out_val;
 			tracker_sync = j;
 
 		}
-//		out[i] = filter_hp_RC_get_next(out[i]);
 		out[i] = filter_lp_RC_get_next(out_val);
+		out[i] = filter_hp_RC_get_next(out[i]);
+
 
 //		out[i] = out_val;
 	}

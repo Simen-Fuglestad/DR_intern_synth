@@ -11,6 +11,9 @@
 /DR_intern_synth/.settings
 /DR_intern_synth/DR_intern_synth\ Debug.launch
 
+/DR_intern_synth/STM32F407VGTX_FLASH.ld
+/DR_intern_synth/STM32F407VGTX_RAM.ld
+
 /DR_intern_synth/Core/Inc/stm32f4xx_hal_conf.h
 /DR_intern_synth/Core/Inc/stm32f4xx_it.h
 

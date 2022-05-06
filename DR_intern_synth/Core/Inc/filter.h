@@ -14,7 +14,7 @@
 #include <string.h>
 #include "mixer.h"
 
-static const float DELTA_T_DEFAULT = 1.0f/1000;
+static const float DELTA_T_DEFAULT = 1.0f/48000;
 
 typedef struct {
 	uint16_t prev_y;
@@ -39,11 +39,11 @@ typedef struct {
 
 // Generic
 
-void filter_update_all(void);
+void filter_update(void);
 
 // Low pass
 
-void filter_lp_RC_init(float fc, float gain, float delta_t);
+void filter_lp_RC_init(float gain, float delta_t);
 void filter_lp_RC_deinit(void);
 
 void filter_lp_update(void);
@@ -63,7 +63,7 @@ float filter_lp_compute_C(float fc, float R);
 
 // High pass
 
-void filter_hp_RC_init(float fc, float gain, float delta_t);
+void filter_hp_RC_init(float gain, float delta_t);
 void filter_hp_RC_deinit(void);
 
 void filter_hp_update(void);

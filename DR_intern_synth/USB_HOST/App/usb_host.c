@@ -26,7 +26,6 @@
 
 /* USER CODE BEGIN Includes */
 #include "usbh_MIDI.h"
-
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN PV */
@@ -77,16 +76,10 @@ void MX_USB_HOST_Init(void)
   {
     Error_Handler();
   }
-//  if (USBH_RegisterClass(&hUsbHostFS, USBH_AUDIO_CLASS) != USBH_OK)
-//  {
-//    Error_Handler();
-//  }
-
   if (USBH_RegisterClass(&hUsbHostFS, USBH_MIDI_CLASS) != USBH_OK)
   {
     Error_Handler();
   }
-
   if (USBH_Start(&hUsbHostFS) != USBH_OK)
   {
     Error_Handler();

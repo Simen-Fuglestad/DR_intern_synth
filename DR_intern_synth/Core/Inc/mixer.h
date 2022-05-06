@@ -12,7 +12,7 @@
 #define ADC_DIGI_REF		4095 //maximum digital value of ADC
 #define ADC_VREF			2.9 //same as system vref
 
-#define MIXER_CHANNELS 		13 //==number of conversions in ADC
+#define MIXER_CHANNELS 		12 //==number of conversions in ADC
 
 #define FILTER_LOW_CHANNEL	0
 #define FILTER_HIGH_CHANNEL	1
@@ -30,7 +30,6 @@
 
 #include "main.h"
 #include <stdbool.h>
-
 
 void mixer_init(ADC_HandleTypeDef*  adc_handle, TIM_HandleTypeDef* htim);
 

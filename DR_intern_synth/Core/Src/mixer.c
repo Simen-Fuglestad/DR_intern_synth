@@ -21,6 +21,10 @@ void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 	}
 }
 
+uint16_t mixer_value_correct(uint16_t val) {
+	return 0;
+}
+
 uint16_t mixer_get_filter_fc_low() {
 	return mixer_DMA[FILTER_LOW_CHANNEL];
 }

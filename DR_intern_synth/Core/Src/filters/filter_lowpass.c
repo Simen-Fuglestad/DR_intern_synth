@@ -13,22 +13,19 @@ static filter_lp_RC1_t lp_filter;
 static bool lp_active;
 
 
-void filter_lp_RC_init(float fc, float gain, float delta_t) {
-	lp_filter.C = C1_DEFAULT;
-	lp_filter.R = filter_lp_compute_R(fc, C1_DEFAULT);
-
+void filter_lp_RC_init(float gain, float delta_t) {
 	if (delta_t >= 1 || delta_t <= 0)
 		lp_filter.delta_t = delta_t;
 	else
 		lp_filter.delta_t = DELTA_T_DEFAULT;
 
-	filter_lp_set_alpha(fc);
+	lp_filter.prev_y = 0;
 	lp_filter.gain = gain;
 	lp_active = true;
 }
 void filter_lp_update() {
 	static float fc;
-	fc = mixer_get_filter_fc_low();
+	fc = mixer_get_filter_fc_low();//flip scale for more intuitive slider behavior
 	lp_filter.fc = fc;
 	filter_lp_set_alpha(fc);
 }
@@ -62,6 +59,7 @@ void filter_lp_RC_set_C(float C) {
 }
 
 void filter_lp_set_alpha(uint16_t fc) {
+
 	lp_filter.alpha = 2 * M_PI * fc * lp_filter.delta_t/(2* M_PI * fc * lp_filter.delta_t + 1);
 }
 
