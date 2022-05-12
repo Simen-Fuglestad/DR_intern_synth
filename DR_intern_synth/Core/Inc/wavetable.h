@@ -24,7 +24,11 @@
 
 typedef enum {
 	SINE, SQUARE, TRIANGLE, SAWTOOTH
-} waveshape_enum;
+} wave_shape_enum;
+
+typedef enum {
+	AM, FM, PM
+} wave_out_mode_enum;
 
 typedef struct {
 	uint16_t* wave_data;
@@ -35,7 +39,7 @@ void wavetable_init(uint16_t* wt_sine, uint16_t* wt_square, uint16_t* wt_tri, ui
 
 //Wave gen functions, create a single period T of ns samples
 void wavetable_create(
-		waveshape_enum waveshape, uint16_t* out, uint16_t ref_v,
+		wave_shape_enum waveshape, uint16_t* out, uint16_t ref_v,
 		uint16_t ns, float amp);
 
 void wavetable_create_sine(

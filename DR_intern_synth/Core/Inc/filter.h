@@ -14,7 +14,7 @@
 #include <string.h>
 #include "mixer.h"
 
-static const float DELTA_T_DEFAULT = 1.0f/48000;
+static const float DELTA_T_DEFAULT = 1.0f/(48000);
 
 typedef struct {
 	uint16_t prev_y;

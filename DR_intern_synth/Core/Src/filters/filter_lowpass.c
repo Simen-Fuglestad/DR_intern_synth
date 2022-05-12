@@ -25,7 +25,7 @@ void filter_lp_RC_init(float gain, float delta_t) {
 }
 void filter_lp_update() {
 	static float fc;
-	fc = mixer_get_filter_fc_low();//flip scale for more intuitive slider behavior
+	fc = mixer_get_filter_fc_low();
 	lp_filter.fc = fc;
 	filter_lp_set_alpha(fc);
 }
@@ -36,7 +36,7 @@ void filter_lp_RC_deinit() {
 
 uint16_t filter_lp_RC_get_next(uint16_t x) {
 	uint16_t y = lp_filter.alpha * x + (1 - lp_filter.alpha) * lp_filter.prev_y;
-	lp_filter.prev_y = y;
+	lp_filter.prev_y = y * lp_filter.gain;
 
 	return y;
 }

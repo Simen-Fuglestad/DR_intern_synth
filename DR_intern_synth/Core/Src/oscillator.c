@@ -6,7 +6,7 @@
  */
 #include "oscillator.h"
 
-void osc_init(oscillator_t* osc, uint16_t* wavetable, waveshape_enum osc_shape, float f) {
+void osc_init(oscillator_t* osc, uint16_t* wavetable, wave_shape_enum osc_shape, float f) {
 	osc->osc_shape = osc_shape;
 	osc->inc_size = f/16.35;
 	osc->wavetable_ptr = wavetable;

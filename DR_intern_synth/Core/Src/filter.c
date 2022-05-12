@@ -8,7 +8,7 @@
 
 
 void filter_update() {
-	if (mixer_get_update_flag()) {
+	if (mixer_get_updated()) {
 		filter_lp_update();
 		filter_hp_update();
 	}

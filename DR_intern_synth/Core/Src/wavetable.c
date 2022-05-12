@@ -15,7 +15,7 @@
 #endif
 
 void wavetable_create(
-		waveshape_enum waveshape, uint16_t* out, uint16_t ref_v,
+		wave_shape_enum waveshape, uint16_t* out, uint16_t ref_v,
 		uint16_t ns, float amp) {
 	switch (waveshape) {
 	case SINE:

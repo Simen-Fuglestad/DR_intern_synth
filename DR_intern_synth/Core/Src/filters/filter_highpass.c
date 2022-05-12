@@ -40,10 +40,11 @@ void filter_hp_RC_deinit() {
 }
 
 uint16_t filter_hp_RC_get_next(uint16_t x) {
-//	if (hp_filter.fc >= 15) {
+//	if (hp_filter.fc > 15) {
 		float c1 = hp_filter.alpha * (float)hp_filter.prev_y;
 		float c2 = hp_filter.alpha * (float)(x - hp_filter.prev_x);
 //		uint16_t y = hp_filter.alpha * hp_filter.prev_y + hp_filter.alpha * (x - hp_filter.prev_x);
+
 		uint16_t y = c1 + c2;
 		hp_filter.prev_x = x;
 		hp_filter.prev_y = y;

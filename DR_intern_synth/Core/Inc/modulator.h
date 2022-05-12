@@ -13,10 +13,6 @@
 #include "note_frequency.h"
 #include <string.h>
 
-typedef enum {
-	FM, AM, LFO
-} modulator_enum;
-
 typedef struct {
 	uint16_t* out_wave;
 	float current_index;
