@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include "output_handler.h"
+#include "mixer.h"
 
 static uint8_t n_voices;
 
@@ -16,11 +17,12 @@ static float steps[MAX_VOICES];
 static float prev_index;
 static uint16_t prev_amp;
 
-bool pwm_update();
+bool pwm_update(float, float, uint8_t);
+bool pwm_update2(float f);
 
 uint16_t output_handler_apply_filters(uint16_t in) {
 	in = filter_lp_RC_get_next(in);
-//	in = filter_hp_RC_get_next(in);
+	//	in = filter_hp_RC_get_next(in);
 	return in;
 }
 
@@ -73,39 +75,43 @@ void output_handler_init(uint8_t MIDI_in_voices) {
  * Best AM (or RM?) so far
  */
 void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_t out_len, uint16_t* wavetable) {
-	//
-	uint16_t out_val = prev_amp;
 
-	uint8_t tracker_sync = 0; //make sure next keypress start on same index as previous
+	static uint16_t out_val;
+
+	static uint8_t tracker_sync; //make sure next keypress start on same index as previous
 
 	for (uint16_t i = out_start; i < out_len; i ++) {
-		if (!pwm_update()) {
-			for (uint16_t j = 0; j < n_voices; j++) {
+		for (uint16_t j = 0; j < n_voices; j++) {
 
-				if (steps[j] == 0) {
-					trackers[j] = trackers[tracker_sync];
-					continue;
-				}
-
-				trackers[j] += steps[j];
-				if(trackers[j] >= N_WT_SAMPLES) {
-					trackers[j] = trackers[j] - N_WT_SAMPLES;
-				}
-				out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
-				tracker_sync = j;
-
+			if (steps[j] == 0) {
+				trackers[j] = trackers[tracker_sync];
+				continue;
 			}
+
+			trackers[j] += steps[j];
+			if(trackers[j] >= N_WT_SAMPLES) {
+				trackers[j] = trackers[j] - N_WT_SAMPLES;
+			}
+
+			if (mixer_is_PWM_enabled()) {
+				if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/4095.0f)) {
+					out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
+				}
+			} else {
+				out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
+			}
+
+			tracker_sync = j;
 		}
 
 		if (mixer_get_filter_enabled())
-			out[i] = output_handler_apply_filters(out_val);
-		else
-			out[i] = out_val;
+			out_val = output_handler_apply_filters(out_val);
+
+		out[i] = out_val;
 
 	}
 	//	HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 
-	prev_amp = out_val;
 }
 
 //float output_handler_outwave_fupdate(
@@ -150,7 +156,7 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 void output_handler_outwave_FM_update(
 		uint16_t* out, uint16_t out_start, uint16_t out_len, uint16_t* wavetable) {
 	//
-	uint16_t out_val = prev_amp;
+	static uint16_t out_val;
 
 	uint8_t tracker_sync = 0; //make sure next keypress start on same index as previous
 
@@ -174,8 +180,6 @@ void output_handler_outwave_FM_update(
 		out[i] = out_val;
 	}
 	//	HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
-
-	prev_amp = out_val;
 }
 
 
@@ -269,24 +273,40 @@ void output_handler_outwave_fupdate(
 //
 //}
 
-bool pwm_update() {
-	static bool pwm_en;
-	pwm_en = mixer_get_PWM_enabled();
 
-	if (pwm_en) {
-		static uint16_t pwm_val;
-		static bool pwm_out;
-		static float pwm_count;
-		pwm_val = mixer_get_PWM();
-		pwm_count += 5;
+bool pwm_update(float step_val, float pwm, uint8_t voice_n) {
 
-		if (pwm_count > pwm_val) {
-			pwm_out = !pwm_out;
-			pwm_count = 0;
-		}
-		return pwm_out;
+	/*
+	 * OBSOLETE, use exisiting trackers to decide PWM.
+	 * Keeping this for future reference
+	 */
+	static float pwm_cnts[MAX_VOICES];
+
+	pwm_cnts[voice_n] += step_val;
+
+	if (pwm_cnts[voice_n] >= N_WT_SAMPLES) {
+		pwm_cnts[voice_n] = 0;
 	}
-	return false;
+	else if (pwm_cnts[voice_n] > (float)N_WT_SAMPLES * pwm) {
+		return false;
+	}
+	else {
+		return true;
+	}
+
+	// early version, not really PWM in the music sense
+//	static uint16_t pwm_val;
+//	static bool pwm_out;
+//	static float pwm_count;
+//	pwm_val = mixer_get_PWM();
+//
+//	pwm_count += 10;
+//	//		pwm_count += mixer_get_mod();
+//	if (pwm_count > pwm_val) {
+//		pwm_out = !pwm_out;
+//		pwm_count = 0;
+//	}
+//	return pwm_out;
 }
 
 

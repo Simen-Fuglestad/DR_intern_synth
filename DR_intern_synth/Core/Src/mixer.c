@@ -97,6 +97,10 @@ uint16_t mixer_get_PWM() {
 	return mixer_DMA[PWM_CHANNEL];
 }
 
+uint16_t mixer_get_mod() {
+	return mixer_DMA[MOD_CHANNEL];
+}
+
 uint16_t mixer_get_LFO() {
 	return mixer_DMA[LFO_CHANNEL];
 }
@@ -114,7 +118,7 @@ bool mixer_get_filter_enabled() {
 	return mixer_filter_en;
 }
 
-bool mixer_get_PWM_enabled() {
+bool mixer_is_PWM_enabled() {
 	return mixer_PWM_en;
 }
 

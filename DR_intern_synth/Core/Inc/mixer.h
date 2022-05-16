@@ -16,7 +16,7 @@
 #define ADC_DIGI_REF		4095 //maximum digital value of ADC
 #define ADC_VREF			2.9 //same as system vref
 
-#define MIXER_ADC1_CHANNELS 12 //==number of conversions in ADC1
+#define MIXER_ADC1_CHANNELS 13 //==number of conversions in ADC1
 
 #define FILTER_LOW_CHANNEL	0
 #define FILTER_HIGH_CHANNEL	1
@@ -46,13 +46,14 @@ uint16_t mixer_get_sustain(void);
 uint16_t mixer_get_release(void);
 uint16_t mixer_get_duty_cycle(void);
 uint16_t mixer_get_PWM(void);
+uint16_t mixer_get_mod(void);
 uint16_t mixer_get_LFO(void);
 
 wave_shape_enum mixer_get_waveshape_out(void);
 wave_out_mode_enum mixer_get_wave_out_mode(void);
 
 bool mixer_get_filter_enabled(void);
-bool mixer_get_PWM_enabled(void);
+bool mixer_is_PWM_enabled(void);
 
 
 #endif /* INC_MIXER_H_ */
