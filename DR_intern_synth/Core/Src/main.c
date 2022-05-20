@@ -46,7 +46,6 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define REF_V_ANALOG 2.90
-#define REF_V_DIGITAL 0xFFF
 #define N_SAMPLES 255
 #define ADC1_N_CHANNELS 3 //active channels on adc 1
 /* USER CODE END PD */
@@ -84,8 +83,6 @@ uint16_t out_wave_saw[I2S_OUT_N];
 float in_wave_index = 0;
 //float index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_C);
 float index_step = 0;
-
-#define n_voices 5
 
 
 bool i2s_tx_cplt = false;
@@ -172,17 +169,17 @@ int main(void)
 
 	CS43_Init(hi2c1, MODE_I2S);
 	CS43_Enable_RightLeft(CS43_RIGHT_LEFT);
-	CS43_SetVolume(5);
+	CS43_SetVolume(50);
 	CS43_Start();
 
 	nf_map_init_440(nf_map_440hz);
 
 	f_base = nf_get_f440hz(SEMITONE_C, 0, nf_map_440hz); //use as basis for all subsequent waves
 
-	wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL, I2S_OUT_N, 0.5);
-	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL, I2S_OUT_N, 0.2);
-	wavetable_create(TRIANGLE, out_wave_tri, REF_V_DIGITAL, I2S_OUT_N, 1);
-	wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL, I2S_OUT_N, 0.4);
+	wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.5);
+	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.2);
+	wavetable_create(TRIANGLE, out_wave_tri, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.5);
+	wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.4);
 
 	HAL_StatusTypeDef tx_init_status = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)i2s_out, I2S_OUT_N);
 
@@ -195,6 +192,8 @@ int main(void)
 	filter_hp_RC_init(1, DELTA_T_DEFAULT);
 
 	output_handler_init(MIDI_get_n_voices());
+	wave_shape_enum wave_shape;
+	wave_out_mode_enum wave_mode;
 
   /* USER CODE END 2 */
 
@@ -213,8 +212,6 @@ int main(void)
 		filter_update();
 
 		if (i2s_tx_half) {
-			static wave_shape_enum wave_shape;
-			static wave_out_mode_enum wave_mode;
 
 			wave_shape = mixer_get_waveshape_out();
 			wave_mode = mixer_get_wave_out_mode();
@@ -247,8 +244,8 @@ int main(void)
 		}
 
 		if (i2s_tx_cplt) {
-			static wave_shape_enum wave_shape;
-			static wave_out_mode_enum wave_mode;
+//			static wave_shape_enum wave_shape;
+//			static wave_out_mode_enum wave_mode;
 
 			wave_shape = mixer_get_waveshape_out();
 			wave_mode = mixer_get_wave_out_mode();
@@ -700,7 +697,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(OTG_FS_PowerSwitchOn_GPIO_Port, OTG_FS_PowerSwitchOn_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, LD6_Pin|Audio_RST_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(Audio_RST_GPIO_Port, Audio_RST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : CS_I2C_SPI_Pin */
   GPIO_InitStruct.Pin = CS_I2C_SPI_Pin;
@@ -744,12 +741,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD6_Pin Audio_RST_Pin */
-  GPIO_InitStruct.Pin = LD6_Pin|Audio_RST_Pin;
+  /*Configure GPIO pin : BUTTON_LOOPER_Pin */
+  GPIO_InitStruct.Pin = BUTTON_LOOPER_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BUTTON_LOOPER_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Audio_RST_Pin */
+  GPIO_InitStruct.Pin = Audio_RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+  HAL_GPIO_Init(Audio_RST_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : OTG_FS_OverCurrent_Pin */
   GPIO_InitStruct.Pin = OTG_FS_OverCurrent_Pin;

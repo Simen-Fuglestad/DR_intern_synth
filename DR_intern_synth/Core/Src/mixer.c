@@ -21,12 +21,9 @@ static bool mixer_mono_en;
 static bool mixer_LFO_en;
 static bool mixer_PWM_en;
 
-static const uint16_t btn_debounce_limit = 0xFF;
+static const uint8_t debounce_limit = 0xFF;
 static bool btn_rdy = true;
-static bool debunce_cnt = 0;
-
-static bool btn_flag  = true;
-
+static uint8_t debounce_cnt = 0;
 void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 	adc_ptr = adc_handle;
 
@@ -43,10 +40,18 @@ void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 	}
 }
 
-bool mixer_get_updated() {
+bool mixer_update() {
 	bool tmp = mixer_adc_update_flag;
 	if (mixer_adc_update_flag) {
 		mixer_adc_update_flag = false;
+	}
+
+	if (!btn_rdy) {
+		debounce_cnt++;
+		if (debounce_cnt >= debounce_limit) {
+			btn_rdy = true;
+			debounce_cnt = 0;
+		}
 	}
 	return tmp;
 }
@@ -114,12 +119,16 @@ wave_out_mode_enum mixer_get_wave_out_mode(void) {
 	return wave_out_mode;
 }
 
-bool mixer_get_filter_enabled() {
+bool mixer_get_filter_en() {
 	return mixer_filter_en;
 }
 
-bool mixer_is_PWM_enabled() {
+bool mixer_get_PWM_en() {
 	return mixer_PWM_en;
+}
+
+bool mixer_get_mono_en() {
+	return mixer_mono_en;
 }
 
 void mixer_cycle_wave() {
@@ -185,8 +194,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if (btn_flag) {
-		btn_flag = false;
+	if (btn_rdy) {
+		btn_rdy = false;
 		switch(GPIO_Pin) {
 		case BUTTON_WAVE_CYCLE_Pin:
 			mixer_cycle_wave();
@@ -209,7 +218,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		default:
 			break;
 		}
-		btn_flag = true;
 	}
 }
 

@@ -8,6 +8,9 @@
 #ifndef MIDI_APPLICATION_H_
 #define MIDI_APPLICATION_H_
 
+
+#define MIDI_MSG_LEN				0x04
+
 //MIDI Code Index Classifications
 
 #define MIDI_CODE_2B_MSG			0x02
@@ -60,8 +63,6 @@ void MIDI_Application(void);
 
 uint8_t* MIDI_get_input_keys(void);
 void MIDI_update_input_f(float* f, float f_base);
-uint8_t MIDI_get_key_pressed(void);
-uint8_t MIDI_get_key_released(void);
 float MIDI_key2f(uint8_t);
 uint8_t MIDI_get_n_voices();
 

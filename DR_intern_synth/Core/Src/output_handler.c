@@ -22,7 +22,7 @@ bool pwm_update2(float f);
 
 uint16_t output_handler_apply_filters(uint16_t in) {
 	in = filter_lp_RC_get_next(in);
-	//	in = filter_hp_RC_get_next(in);
+	in = filter_hp_RC_get_next(in);
 	return in;
 }
 
@@ -80,7 +80,7 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 
 	static uint8_t tracker_sync; //make sure next keypress start on same index as previous
 
-	for (uint16_t i = out_start; i < out_len; i ++) {
+	for (uint16_t i = out_start; i < out_len; i++) {
 		for (uint16_t j = 0; j < n_voices; j++) {
 
 			if (steps[j] == 0) {
@@ -93,8 +93,8 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 				trackers[j] = trackers[j] - N_WT_SAMPLES;
 			}
 
-			if (mixer_is_PWM_enabled()) {
-				if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/4095.0f)) {
+			if (mixer_get_PWM_en()) {
+				if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/0xFFF)) {
 					out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
 				}
 			} else {
@@ -104,7 +104,7 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 			tracker_sync = j;
 		}
 
-		if (mixer_get_filter_enabled())
+		if (mixer_get_filter_en())
 			out_val = output_handler_apply_filters(out_val);
 
 		out[i] = out_val;
@@ -213,19 +213,19 @@ void output_handler_outwave_fupdate(
 			tracker_sync = j;
 
 			//			Fun sci-fi
-			//			index_cnt = index_cnt + steps[j];
-			//			if (index_cnt > N_WT_SAMPLES) {
-			//				index_cnt = index_cnt - N_WT_SAMPLES;
-			//			}
+			index_cnt = index_cnt + steps[j];
+			if (index_cnt > N_WT_SAMPLES) {
+				index_cnt = index_cnt - N_WT_SAMPLES;
+			}
 
 		}
-		index_cnt = index_cnt + steps[active_voice];
-		if (index_cnt > N_WT_SAMPLES) {
-			index_cnt = index_cnt - N_WT_SAMPLES;
-		}
+//		index_cnt = index_cnt + steps[active_voice];
+//		if (index_cnt > N_WT_SAMPLES) {
+//			index_cnt = index_cnt - N_WT_SAMPLES;
+//		}
 		//		out[i] = filter_lp_RC_get_next(wavetable[(uint16_t)index_cnt]);
-		out[i] = filter_hp_RC_get_next(wavetable[(uint16_t)index_cnt]);
-		//		out[i] = wavetable[(uint16_t)index_cnt];
+//		out[i] = filter_hp_RC_get_next(wavetable[(uint16_t)index_cnt]);
+				out[i] = wavetable[(uint16_t)index_cnt];
 	}
 	//	HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 	prev_index = index_cnt;

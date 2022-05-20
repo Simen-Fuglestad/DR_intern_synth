@@ -34,7 +34,7 @@
 
 void mixer_init(ADC_HandleTypeDef*  adc_handle, TIM_HandleTypeDef* htim);
 
-bool mixer_get_updated(void);
+bool mixer_update(void);
 
 uint16_t mixer_get_filter_fc_low(void);
 uint16_t mixer_get_filter_fc_high(void);
@@ -52,8 +52,8 @@ uint16_t mixer_get_LFO(void);
 wave_shape_enum mixer_get_waveshape_out(void);
 wave_out_mode_enum mixer_get_wave_out_mode(void);
 
-bool mixer_get_filter_enabled(void);
-bool mixer_is_PWM_enabled(void);
-
+bool mixer_get_filter_en(void);
+bool mixer_get_PWM_en(void);
+bool mixer_get_mono_en(void);
 
 #endif /* INC_MIXER_H_ */

@@ -11,7 +11,8 @@
 /*
  * Collection of methods and helper constants to create wave tables of various shapes.
  */
-
+#define REF_V_DIGITAL_HEADPHONE 0xFFFF
+#define REF_V_DIGITAL_SPEAKER 0xFFFF
 #define I2S_SAMPLE_RATE 48000
 #define MAX_SAMPLE_SIZE_F (I2S_SAMPLE_RATE)/16.352
 //#define MAX_SAMPLE_SIZE 2935 	//48khz mono
