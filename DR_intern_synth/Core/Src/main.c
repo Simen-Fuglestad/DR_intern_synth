@@ -73,6 +73,7 @@ uint16_t output_wave[N_WT_SAMPLES];
 
 
 #define I2S_OUT_N N_WT_SAMPLES
+#define I2S_OUT_N_HALF I2S_OUT_N/2
 uint16_t i2s_out[I2S_OUT_N];
 
 uint16_t out_wave_sine[I2S_OUT_N];
@@ -80,23 +81,8 @@ uint16_t out_wave_square[I2S_OUT_N];
 uint16_t out_wave_tri[I2S_OUT_N];
 uint16_t out_wave_saw[I2S_OUT_N];
 
-float in_wave_index = 0;
-//float index_step = pow(OCTAVE_STEP, 12*4 + SEMITONE_C);
-float index_step = 0;
-
-
 bool i2s_tx_cplt = false;
 bool i2s_tx_half = false;
-
-bool key_pressed = false;
-
-bool i2s_tx_rdy = false;
-bool i2s_next_out_rdy = false;
-
-wave_shape_enum current_wave_out = SINE;
-bool cycle_waveshape_flag = false;
-
-float f_base;
 
 note_t nf_map_440hz[N_OCTAVES * N_SEMITONES];
 
@@ -104,10 +90,6 @@ uint16_t debounce_cnt = 0;
 uint16_t debounce_limit = 0x1FF;
 bool debounce_flag = false;
 
-uint8_t chord_progress = 0;
-
-bool input_active;
-uint8_t keys_pressed = 0;
 
 /* USER CODE END PV */
 
@@ -169,16 +151,16 @@ int main(void)
 
 	CS43_Init(hi2c1, MODE_I2S);
 	CS43_Enable_RightLeft(CS43_RIGHT_LEFT);
-	CS43_SetVolume(50);
+	CS43_SetVolume(5);
 	CS43_Start();
 
 	nf_map_init_440(nf_map_440hz);
 
-	f_base = nf_get_f440hz(SEMITONE_C, 0, nf_map_440hz); //use as basis for all subsequent waves
+	float f_base = nf_get_f440hz(SEMITONE_C, 0, nf_map_440hz); //use as basis for all subsequent waves
 
-	wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.5);
-	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.2);
-	wavetable_create(TRIANGLE, out_wave_tri, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.5);
+	wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
+	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.5);
+	wavetable_create(TRIANGLE, out_wave_tri, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
 	wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.4);
 
 	HAL_StatusTypeDef tx_init_status = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)i2s_out, I2S_OUT_N);
@@ -207,88 +189,74 @@ int main(void)
     MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
-		MIDI_update_input_f(output_handler_get_steps(), f_base);
+		MIDI_update_input_f(output_handler_get_steps(), f_base/2);
 
 		filter_update();
 
 		if (i2s_tx_half) {
-
+//			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
 			wave_shape = mixer_get_waveshape_out();
 			wave_mode = mixer_get_wave_out_mode();
 
 			if (wave_shape == SINE) {
 				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N/2, out_wave_sine);
+					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_sine);
 				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N/2, out_wave_sine);
+					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N_HALF, out_wave_sine);
 			}
 			else if (wave_shape == SQUARE) {
 				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N/2, out_wave_square);
+					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_square);
 				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N/2, out_wave_square);
+					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N_HALF, out_wave_square);
 			}
 			else if (wave_shape == TRIANGLE) {
 				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N/2, out_wave_tri);
+					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_tri);
 				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N/2, out_wave_tri);
+					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N_HALF, out_wave_tri);
 			}
 			else if (wave_shape == SAWTOOTH) {
 				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N/2, out_wave_saw);
+					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_saw);
 				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N/2, out_wave_saw);
+					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N_HALF, out_wave_saw);
 			}
 			i2s_tx_half = false;
+//			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 		}
 
 		if (i2s_tx_cplt) {
-//			static wave_shape_enum wave_shape;
-//			static wave_out_mode_enum wave_mode;
-
+//			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
 			wave_shape = mixer_get_waveshape_out();
 			wave_mode = mixer_get_wave_out_mode();
 
 			if (wave_shape == SINE) {
 				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_sine);
+					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_sine);
 				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_sine);
+					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_sine);
 			}
 			else if (wave_shape == SQUARE) {
 				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_square);
+					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_square);
 				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_square);
+					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_square);
 			}
 			else if (wave_shape == TRIANGLE) {
 				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_tri);
+					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_tri);
 				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_tri);
+					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_tri);
 			}
 			else if (wave_shape == SAWTOOTH) {
 				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_saw);
+					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_saw);
 				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N/2, I2S_OUT_N, out_wave_saw);
+					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_saw);
 			}
 			i2s_tx_cplt = false;
-		}
-
-		if (debounce_flag) {
-			debounce_cnt++;
-			if (debounce_cnt >= debounce_limit) {
-				debounce_flag = false;
-				debounce_cnt = 0;
-			}
-		}
-
-		if (key_pressed && !debounce_flag) {
-			debounce_flag = true;
-//			current_wave_out = cycle_waveshape(current_wave_out);
-			key_pressed = false;
+//			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 		}
 	}
   /* USER CODE END 3 */
@@ -586,7 +554,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 256;
+  htim3.Init.Prescaler = 64;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -691,7 +659,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(CS_I2C_SPI_GPIO_Port, CS_I2C_SPI_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, CS_I2C_SPI_Pin|TEST_PIN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(OTG_FS_PowerSwitchOn_GPIO_Port, OTG_FS_PowerSwitchOn_Pin, GPIO_PIN_SET);
@@ -699,12 +667,12 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(Audio_RST_GPIO_Port, Audio_RST_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : CS_I2C_SPI_Pin */
-  GPIO_InitStruct.Pin = CS_I2C_SPI_Pin;
+  /*Configure GPIO pins : CS_I2C_SPI_Pin TEST_PIN_Pin */
+  GPIO_InitStruct.Pin = CS_I2C_SPI_Pin|TEST_PIN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(CS_I2C_SPI_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : OTG_FS_PowerSwitchOn_Pin */
   GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin;
@@ -778,9 +746,8 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
-	if (htim == &htim3) {
-		int tim_br = 0;
-	}
+	if (htim == &htim3)
+		HAL_GPIO_TogglePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin);
 }
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef* hi2s) {

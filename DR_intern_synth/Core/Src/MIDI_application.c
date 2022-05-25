@@ -20,7 +20,7 @@
 uint8_t MIDI_RX_Buffer[RX_BUFF_SIZE]; // MIDI reception buffer
 
 
-#define POLY_INPUTS 5
+#define POLY_INPUTS 10
 static uint8_t MIDI_input_keys[POLY_INPUTS];
 static uint8_t next_key_index = 0;
 static uint8_t input_key_tmp;
@@ -62,7 +62,7 @@ void MIDI_Application(void)
  */
 void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
 {
-	for (uint8_t i = 0; i < RX_BUFF_SIZE; i+=4) {
+	for (uint8_t i = 0; i < RX_BUFF_SIZE; i+=MIDI_MSG_LEN) {
 		ProcessReceivedMidiData(MIDI_RX_Buffer[i], i);
 	}
 

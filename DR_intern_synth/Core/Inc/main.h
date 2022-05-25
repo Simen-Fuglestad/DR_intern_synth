@@ -101,6 +101,8 @@ void Error_Handler(void);
 #define MIXER_RELEASE_GPIO_Port GPIOB
 #define BOOT1_Pin GPIO_PIN_2
 #define BOOT1_GPIO_Port GPIOB
+#define TEST_PIN_Pin GPIO_PIN_11
+#define TEST_PIN_GPIO_Port GPIOE
 #define CLK_IN_Pin GPIO_PIN_10
 #define CLK_IN_GPIO_Port GPIOB
 #define BUTTON_PITCH_TOGGLE_Pin GPIO_PIN_8

@@ -70,8 +70,8 @@ uint16_t mixer_get_filter_fc_high() {
 	}
 }
 
-uint16_t mixer_get_gain() {
-	return mixer_DMA[GAIN_CHANNEL];
+uint16_t mixer_get_volume() {
+	return mixer_DMA[VOLUME_CHANNEL];
 }
 
 uint16_t mixer_get_tremolo() {

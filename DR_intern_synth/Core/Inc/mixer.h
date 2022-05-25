@@ -12,15 +12,15 @@
 #include <stdbool.h>
 #include "wavetable.h"
 
-#define ADC_RES				12 //adc resolution in bits
-#define ADC_DIGI_REF		4095 //maximum digital value of ADC
-#define ADC_VREF			2.9 //same as system vref
+#define MIXER_RES				12 //adc resolution in bits
+#define MIXER_DIGI_REF		4095 //maximum digital value of ADC
+#define MIXER_VREF			2.9 //same as system vref
 
 #define MIXER_ADC1_CHANNELS 13 //==number of conversions in ADC1
 
 #define FILTER_LOW_CHANNEL	0
 #define FILTER_HIGH_CHANNEL	1
-#define GAIN_CHANNEL 		2
+#define VOLUME_CHANNEL 		2
 #define TREMOLO_CHANNEL 	3
 #define ATTACK_CHANNEL 		4
 #define DECAY_CHANNEL		5
@@ -38,7 +38,7 @@ bool mixer_update(void);
 
 uint16_t mixer_get_filter_fc_low(void);
 uint16_t mixer_get_filter_fc_high(void);
-uint16_t mixer_get_gain(void);
+uint16_t mixer_get_volume(void);
 uint16_t mixer_get_tremolo(void);
 uint16_t mixer_get_attack(void);
 uint16_t mixer_get_decay(void);
