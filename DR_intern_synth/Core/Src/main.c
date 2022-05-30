@@ -157,11 +157,12 @@ int main(void)
 	nf_map_init_440(nf_map_440hz);
 
 	float f_base = nf_get_f440hz(SEMITONE_C, 0, nf_map_440hz); //use as basis for all subsequent waves
+	uint16_t f_base_n = f_base * 100;
 
 	wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
-	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.5);
+	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
 	wavetable_create(TRIANGLE, out_wave_tri, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
-	wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 0.4);
+	wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
 
 	HAL_StatusTypeDef tx_init_status = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)i2s_out, I2S_OUT_N);
 
@@ -228,7 +229,7 @@ int main(void)
 
 		if (i2s_tx_cplt) {
 //			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
-			wave_shape = mixer_get_waveshape_out();
+			wave_shape = mixer_get_waveshape_out_2();
 			wave_mode = mixer_get_wave_out_mode();
 
 			if (wave_shape == SINE) {
@@ -701,9 +702,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
   HAL_GPIO_Init(CLK_IN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BUTTON_PITCH_TOGGLE_Pin BUTTON_FILTER_ENABLE_Pin BUTTON_PWM_ENABLE_Pin BUTTON_MONO_TOGGLE_Pin
+  /*Configure GPIO pins : BUTTON_PITCH_TOGGLE_Pin BUTTON_FILTER_ENABLE_Pin BUTTON_PWM_ENABLE_Pin BUTTON_WAVE_MODE_2_Pin
                            BUTTON_LFO_ENABLE_Pin BUTTON_WAVE_MODE_Pin BUTTON_WAVE_CYCLE_Pin */
-  GPIO_InitStruct.Pin = BUTTON_PITCH_TOGGLE_Pin|BUTTON_FILTER_ENABLE_Pin|BUTTON_PWM_ENABLE_Pin|BUTTON_MONO_TOGGLE_Pin
+  GPIO_InitStruct.Pin = BUTTON_PITCH_TOGGLE_Pin|BUTTON_FILTER_ENABLE_Pin|BUTTON_PWM_ENABLE_Pin|BUTTON_WAVE_MODE_2_Pin
                           |BUTTON_LFO_ENABLE_Pin|BUTTON_WAVE_MODE_Pin|BUTTON_WAVE_CYCLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;

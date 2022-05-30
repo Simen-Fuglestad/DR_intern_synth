@@ -10,7 +10,8 @@
 volatile static uint16_t mixer_DMA[MIXER_ADC1_CHANNELS];
 static ADC_HandleTypeDef* adc_ptr;
 
-static wave_shape_enum waveshape_out;
+static wave_shape_enum waveshape_out_1;
+static wave_shape_enum waveshape_out_2;
 static wave_out_mode_enum wave_out_mode;
 
 static bool mixer_adc_update_flag;
@@ -24,6 +25,7 @@ static bool mixer_PWM_en;
 static const uint8_t debounce_limit = 0xFF;
 static bool btn_rdy = true;
 static uint8_t debounce_cnt = 0;
+
 void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 	adc_ptr = adc_handle;
 
@@ -32,8 +34,8 @@ void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 		HAL_StatusTypeDef tim_init = HAL_TIM_Base_Start_IT(htim);
 		HAL_StatusTypeDef adc_init = HAL_ADC_Start_DMA(adc_ptr, (uint32_t*)mixer_DMA, MIXER_ADC1_CHANNELS);
 
-		waveshape_out = SINE;
-
+		waveshape_out_1 = SINE;
+		waveshape_out_2 = SINE;
 		mixer_adc_update_flag = false;
 		mixer_btn_pressed_flag = false;
 		mixer_filter_en = false;
@@ -112,11 +114,15 @@ uint16_t mixer_get_LFO() {
 
 
 wave_shape_enum mixer_get_waveshape_out(void) {
-	return waveshape_out;
+	return waveshape_out_1;
 }
 
 wave_out_mode_enum mixer_get_wave_out_mode(void) {
 	return wave_out_mode;
+}
+
+wave_out_mode_enum mixer_get_waveshape_out_2(void) {
+	return waveshape_out_2;
 }
 
 bool mixer_get_filter_en() {
@@ -131,19 +137,19 @@ bool mixer_get_mono_en() {
 	return mixer_mono_en;
 }
 
-void mixer_cycle_wave() {
-	switch (waveshape_out) {
+void mixer_cycle_wave(wave_shape_enum* w_shape_ptr) {
+	switch (*w_shape_ptr) {
 	case SINE:
-		waveshape_out = SQUARE;
+		*w_shape_ptr = SQUARE;
 		break;
 	case SQUARE:
-		waveshape_out = TRIANGLE;
+		*w_shape_ptr = TRIANGLE;
 		break;
 	case TRIANGLE:
-		waveshape_out = SAWTOOTH;
+		*w_shape_ptr = SAWTOOTH;
 		break;
 	default:
-		waveshape_out = SINE;
+		*w_shape_ptr = SINE;
 		break;
 	}
 
@@ -198,7 +204,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		btn_rdy = false;
 		switch(GPIO_Pin) {
 		case BUTTON_WAVE_CYCLE_Pin:
-			mixer_cycle_wave();
+			mixer_cycle_wave(&waveshape_out_1);
 			break;
 		case BUTTON_WAVE_MODE_Pin:
 			mixer_cycle_mode();
@@ -209,8 +215,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		case BUTTON_PWM_ENABLE_Pin:
 			mixer_PWM_toggle();
 			break;
-		case BUTTON_MONO_TOGGLE_Pin:
-			mixer_mono_toggle();
+		case BUTTON_WAVE_MODE_2_Pin:
+			mixer_cycle_wave(&waveshape_out_2);
 			break;
 		case BUTTON_FILTER_ENABLE_Pin:
 			mixer_filter_toggle();

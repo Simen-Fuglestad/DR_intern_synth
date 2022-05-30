@@ -51,9 +51,9 @@ uint16_t mixer_get_LFO(void);
 
 wave_shape_enum mixer_get_waveshape_out(void);
 wave_out_mode_enum mixer_get_wave_out_mode(void);
+wave_out_mode_enum mixer_get_waveshape_out_2(void);
 
 bool mixer_get_filter_en(void);
 bool mixer_get_PWM_en(void);
-bool mixer_get_mono_en(void);
 
 #endif /* INC_MIXER_H_ */

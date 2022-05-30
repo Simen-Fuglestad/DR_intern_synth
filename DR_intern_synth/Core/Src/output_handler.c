@@ -92,17 +92,15 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 			} else {
 				out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
 			}
-
 			tracker_sync = j;
 		}
 
-		if (mixer_get_filter_en())
+		if (mixer_get_filter_en()) {
 			out_val = output_handler_apply_filters(out_val);
+		}
 
 		out[i] = out_val * ((float)mixer_get_volume()/MIXER_DIGI_REF);
 		out[i+1] = out[i];
-//		out[i+1] = out_val;
-
 	}
 	//	HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 
