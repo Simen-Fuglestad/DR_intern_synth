@@ -229,7 +229,7 @@ int main(void)
 
 		if (i2s_tx_cplt) {
 //			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
-			wave_shape = mixer_get_waveshape_out_2();
+			wave_shape = mixer_get_waveshape_out();
 			wave_mode = mixer_get_wave_out_mode();
 
 			if (wave_shape == SINE) {
@@ -702,9 +702,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
   HAL_GPIO_Init(CLK_IN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BUTTON_PITCH_TOGGLE_Pin BUTTON_FILTER_ENABLE_Pin BUTTON_PWM_ENABLE_Pin BUTTON_WAVE_MODE_2_Pin
+  /*Configure GPIO pins : BUTTON_PITCH_TOGGLE_Pin BUTTON_FILTER_ENABLE_Pin BUTTON_PWM_ENABLE_Pin BUTTON_LFO_MODE_Pin
                            BUTTON_LFO_ENABLE_Pin BUTTON_WAVE_MODE_Pin BUTTON_WAVE_CYCLE_Pin */
-  GPIO_InitStruct.Pin = BUTTON_PITCH_TOGGLE_Pin|BUTTON_FILTER_ENABLE_Pin|BUTTON_PWM_ENABLE_Pin|BUTTON_WAVE_MODE_2_Pin
+  GPIO_InitStruct.Pin = BUTTON_PITCH_TOGGLE_Pin|BUTTON_FILTER_ENABLE_Pin|BUTTON_PWM_ENABLE_Pin|BUTTON_LFO_MODE_Pin
                           |BUTTON_LFO_ENABLE_Pin|BUTTON_WAVE_MODE_Pin|BUTTON_WAVE_CYCLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;

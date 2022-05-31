@@ -18,8 +18,10 @@ static bool mixer_adc_update_flag;
 static bool mixer_btn_pressed_flag;
 
 static bool mixer_filter_en;
-static bool mixer_mono_en;
+
 static bool mixer_LFO_en;
+static LFO_mode_enum mixer_LFO_mode;
+
 static bool mixer_PWM_en;
 
 static const uint8_t debounce_limit = 0xFF;
@@ -43,7 +45,7 @@ void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 }
 
 bool mixer_update() {
-	bool tmp = mixer_adc_update_flag;
+	bool tmp_adc = mixer_adc_update_flag;
 	if (mixer_adc_update_flag) {
 		mixer_adc_update_flag = false;
 	}
@@ -55,7 +57,7 @@ bool mixer_update() {
 			debounce_cnt = 0;
 		}
 	}
-	return tmp;
+	return tmp_adc;
 }
 
 
@@ -112,7 +114,6 @@ uint16_t mixer_get_LFO() {
 	return mixer_DMA[LFO_CHANNEL];
 }
 
-
 wave_shape_enum mixer_get_waveshape_out(void) {
 	return waveshape_out_1;
 }
@@ -121,20 +122,20 @@ wave_out_mode_enum mixer_get_wave_out_mode(void) {
 	return wave_out_mode;
 }
 
-wave_out_mode_enum mixer_get_waveshape_out_2(void) {
-	return waveshape_out_2;
+LFO_mode_enum mixer_get_LFO_mode(void) {
+	return mixer_LFO_mode;
 }
 
 bool mixer_get_filter_en() {
 	return mixer_filter_en;
 }
 
-bool mixer_get_PWM_en() {
+bool mixer_is_PWM_en() {
 	return mixer_PWM_en;
 }
 
-bool mixer_get_mono_en() {
-	return mixer_mono_en;
+bool mixer_is_LFO_en() {
+	return mixer_LFO_en;
 }
 
 void mixer_cycle_wave(wave_shape_enum* w_shape_ptr) {
@@ -167,7 +168,19 @@ void mixer_cycle_mode() {
 		wave_out_mode = PM;
 		break;
 	default:
-		//PM coming soon!
+		break;
+	}
+}
+
+void mixer_cycle_LFO_mode() {
+	switch(mixer_LFO_mode) {
+	case VOLUME:
+		mixer_LFO_mode = PITCH;
+		break;
+	case PITCH:
+		mixer_LFO_mode = VOLUME;
+		break;
+	default:
 		break;
 	}
 }
@@ -178,10 +191,6 @@ void mixer_LFO_toggle() {
 
 void mixer_PWM_toggle() {
 	mixer_PWM_en = !mixer_PWM_en;
-}
-
-void mixer_mono_toggle() {
-	mixer_mono_en = !mixer_mono_en;
 }
 
 void mixer_filter_toggle() {
@@ -215,8 +224,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		case BUTTON_PWM_ENABLE_Pin:
 			mixer_PWM_toggle();
 			break;
-		case BUTTON_WAVE_MODE_2_Pin:
-			mixer_cycle_wave(&waveshape_out_2);
+		case BUTTON_LFO_MODE_Pin:
+			mixer_cycle_LFO_mode();
 			break;
 		case BUTTON_FILTER_ENABLE_Pin:
 			mixer_filter_toggle();

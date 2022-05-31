@@ -14,11 +14,13 @@ static uint8_t n_voices;
 static float trackers[MAX_VOICES];
 static float steps[MAX_VOICES];
 
-uint16_t output_handler_apply_filters(uint16_t in) {
-	in = filter_lp_RC_get_next(in);
-	in = filter_hp_RC_get_next(in);
-	return in;
-}
+static const float LFO_LIM = 16;
+static const float LFO_LIM_STEP_SZ = 8; //2~C0, 4~C1, 8~C2 etc
+static float LFO_tracker;
+
+
+uint16_t apply_effects(uint16_t in);
+uint16_t apply_filters(uint16_t in);
 
 void output_handler_init(uint8_t MIDI_in_voices) {
 	if (MIDI_in_voices <= MAX_VOICES) {
@@ -85,18 +87,38 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 				trackers[j] = trackers[j] - N_WT_SAMPLES;
 			}
 
-			if (mixer_get_PWM_en()) {
+			if (mixer_is_PWM_en()) {
 				if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/MIXER_DIGI_REF)) {
 					out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
 				}
 			} else {
 				out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
 			}
+
+			if (mixer_is_LFO_en()) {
+				uint16_t lfo_val = wavetable[(uint16_t)LFO_tracker];
+				if (mixer_get_LFO_mode() == VOLUME) {
+					float lfo_scaled = (float)lfo_val/0xFFF;
+					out_val = out_val * lfo_scaled;
+//					LFO_tracker += ((float)mixer_get_LFO() + LFO_LIM)/MIXER_DIGI_REF;
+				} else if (mixer_get_LFO_mode() == PITCH) {
+					out_val = (out_val + wavetable[(uint16_t)LFO_tracker])/2;
+//					LFO_tracker += (float)mixer_get_LFO() * LFO_LIM/MIXER_DIGI_REF;
+				}
+
+//				LFO_tracker += ((float)mixer_get_LFO() + LFO_LIM)/MIXER_DIGI_REF;
+//				LFO_tracker += LFO_LIM + (float)mixer_get_LFO()/MIXER_DIGI_REF;
+				float scaled = (float)mixer_get_LFO()/MIXER_DIGI_REF;
+				LFO_tracker+= (float)LFO_LIM_STEP_SZ * scaled;
+				if (LFO_tracker > N_WT_SAMPLES) {
+					LFO_tracker -= N_WT_SAMPLES;
+				}
+			}
 			tracker_sync = j;
 		}
 
 		if (mixer_get_filter_en()) {
-			out_val = output_handler_apply_filters(out_val);
+			out_val = apply_filters(out_val);
 		}
 
 		out[i] = out_val * ((float)mixer_get_volume()/MIXER_DIGI_REF);
@@ -260,6 +282,18 @@ void output_handler_outwave_fupdate(
 //	return index;
 //
 //}
+
+uint16_t apply_effects(uint16_t in) {
+	if (mixer_is_PWM_en()) {
+
+	}
+}
+
+uint16_t apply_filters(uint16_t in) {
+	in = filter_lp_RC_get_next(in);
+//	in = filter_hp_RC_get_next(in);
+	return in;
+}
 
 
 float* output_handler_get_steps() {

@@ -61,10 +61,9 @@ void wavetable_create_square(uint16_t* out, uint16_t ref_v, uint16_t ns, float a
 void wavetable_create_triangle(uint16_t* out, uint16_t ref_v, uint16_t ns, float amp) {
 	for (int i = 0; i < ns; i++) {
 		float tri = 2.0f * fabs((float)i/ns - floor((float)i/ns + 0.5));
+		float scaled = tri * (ref_v);
 
-		float scaled = tri * ((ref_v));
-
-		uint16_t s = (uint16_t)(scaled + ref_v) * amp;
+		uint16_t s = (uint16_t)(scaled) * amp;
 		out[i] = s;
 	}
 }

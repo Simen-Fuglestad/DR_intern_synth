@@ -32,6 +32,10 @@
 #define LFO_CHANNEL			11
 #define PITCH_CHANNEL		12
 
+typedef enum {
+	VOLUME, PITCH
+} LFO_mode_enum;
+
 void mixer_init(ADC_HandleTypeDef*  adc_handle, TIM_HandleTypeDef* htim);
 
 bool mixer_update(void);
@@ -51,9 +55,11 @@ uint16_t mixer_get_LFO(void);
 
 wave_shape_enum mixer_get_waveshape_out(void);
 wave_out_mode_enum mixer_get_wave_out_mode(void);
-wave_out_mode_enum mixer_get_waveshape_out_2(void);
+
+LFO_mode_enum mixer_get_LFO_mode(void);
 
 bool mixer_get_filter_en(void);
-bool mixer_get_PWM_en(void);
+bool mixer_is_PWM_en(void);
+bool mixer_is_LFO_en(void);
 
 #endif /* INC_MIXER_H_ */
