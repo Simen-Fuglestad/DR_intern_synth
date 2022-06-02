@@ -30,7 +30,7 @@ void filter_hp_RC_init(float gain, float delta_t) {
 
 void filter_hp_update() {
 	static float fc;
-	fc = mixer_get_filter_fc_high();
+	fc = mixer_get_filter_fc_high() >> 4; //caps cutoff at 0xFFF >> 4 == 511Hz
 	hp_filter.fc = fc;
 	filter_hp_set_alpha(fc);
 }

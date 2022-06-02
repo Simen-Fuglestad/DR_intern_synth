@@ -67,12 +67,17 @@ bool mixer_update() {
 
 
 uint16_t mixer_get_filter_fc_low() {
-	return mixer_DMA[FILTER_LOW_CHANNEL];
+	if (mixer_DMA[FILTER_LOW_CHANNEL] >= MIXER_SOFT_CAP) {
+		return mixer_DMA[FILTER_LOW_CHANNEL] - MIXER_SOFT_CAP;
+	}
+	else {
+		return 0;
+	}
 }
 
 uint16_t mixer_get_filter_fc_high() {
-	if (mixer_DMA[FILTER_HIGH_CHANNEL] > 20) {
-		return mixer_DMA[FILTER_HIGH_CHANNEL];
+	if (mixer_DMA[FILTER_HIGH_CHANNEL] >= MIXER_SOFT_CAP) {
+		return mixer_DMA[FILTER_HIGH_CHANNEL] - MIXER_SOFT_CAP;
 	}
 	else {
 		return 0;

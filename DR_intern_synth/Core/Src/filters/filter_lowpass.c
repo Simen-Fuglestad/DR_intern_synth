@@ -25,7 +25,7 @@ void filter_lp_RC_init(float gain, float delta_t) {
 }
 void filter_lp_update() {
 	static float fc;
-	fc = mixer_get_filter_fc_low();
+	fc = 0xFFF - mixer_get_filter_fc_low();
 	lp_filter.fc = fc;
 	filter_lp_set_alpha(fc);
 }

@@ -101,26 +101,16 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 			}
 
 			tracker_sync = j;
-
-			if (mixer_get_filter_en()) {
-				out_val = apply_filters(out_val);
-			}
 		}
 
-		if (input_active)
+		if (input_active) {
 			out_val = apply_effects(out_val, wavetable);
+			out_val = apply_filters(out_val);
+		}
 
 		out[i] = out_val * ((float)mixer_get_volume()/MIXER_DIGI_REF);
 		out[i+1] = out[i];
-//		if (mixer_is_PWM_en()) {
-//			if (PWM_apply(mixer_get_PWM(), out_val, trackers[tracker_sync])) {
-//				out[i] = out_val * ((float)mixer_get_volume()/MIXER_DIGI_REF);
-//				out[i+1] = out[i];
-//			}
-//		} else {
-//			out[i] = out_val * ((float)mixer_get_volume()/MIXER_DIGI_REF);
-//			out[i+1] = out[i];
-//		}
+
 	}
 	input_active = false;
 }
@@ -294,7 +284,7 @@ uint16_t apply_effects(uint16_t out_val, uint16_t* wavetable) {
 
 uint16_t apply_filters(uint16_t in) {
 	in = filter_lp_RC_get_next(in);
-//	in = filter_hp_RC_get_next(in);
+	in = filter_hp_RC_get_next(in);
 
 	return in;
 }
