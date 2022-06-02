@@ -29,6 +29,8 @@
 #define MIDI_CODE_PITCH_BEND		0x0E
 #define MIDI_CODE_1B				0x0F //Single byte
 
+#define MIDI_CODE_RANGE				0x80
+
 
 /* Includes ------------------------------------------------------------------*/
 

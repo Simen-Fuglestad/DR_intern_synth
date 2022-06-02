@@ -20,7 +20,9 @@ static bool mixer_btn_pressed_flag;
 static bool mixer_filter_en;
 
 static bool mixer_LFO_en;
+static bool mixer_LFO2_en;
 static LFO_mode_enum mixer_LFO_mode;
+static LFO_mode_enum mixer_LFO2_mode;
 
 static bool mixer_PWM_en;
 
@@ -28,9 +30,12 @@ static const uint8_t debounce_limit = 0xFF;
 static bool btn_rdy = true;
 static uint8_t debounce_cnt = 0;
 
+void mixer_LFO_toggle(void);
+void mixer_LFO2_toggle(void);
+
+
 void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 	adc_ptr = adc_handle;
-
 
 	if (adc_ptr) {
 		HAL_StatusTypeDef tim_init = HAL_TIM_Base_Start_IT(htim);
@@ -78,10 +83,6 @@ uint16_t mixer_get_volume() {
 	return mixer_DMA[VOLUME_CHANNEL];
 }
 
-uint16_t mixer_get_tremolo() {
-	return mixer_DMA[TREMOLO_CHANNEL];
-}
-
 uint16_t mixer_get_attack() {
 	return mixer_DMA[ATTACK_CHANNEL];
 }
@@ -103,7 +104,10 @@ uint16_t mixer_get_duty_cycle(void) {
 }
 
 uint16_t mixer_get_PWM() {
-	return mixer_DMA[PWM_CHANNEL];
+	if (mixer_DMA[PWM_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_DMA[PWM_CHANNEL] - MIXER_SOFT_CAP;
+	else
+		return 0;
 }
 
 uint16_t mixer_get_mod() {
@@ -111,19 +115,33 @@ uint16_t mixer_get_mod() {
 }
 
 uint16_t mixer_get_LFO() {
-	return mixer_DMA[LFO_CHANNEL];
+	if (mixer_DMA[LFO_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_DMA[LFO_CHANNEL] - MIXER_SOFT_CAP;
+	else
+		return 0;
 }
 
-wave_shape_enum mixer_get_waveshape_out(void) {
+uint16_t mixer_get_LFO2() {
+	if (mixer_DMA[LFO2_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_DMA[LFO2_CHANNEL] - MIXER_SOFT_CAP;
+	else
+		return 0;
+}
+
+wave_shape_enum mixer_get_waveshape_out() {
 	return waveshape_out_1;
 }
 
-wave_out_mode_enum mixer_get_wave_out_mode(void) {
+wave_out_mode_enum mixer_get_wave_out_mode() {
 	return wave_out_mode;
 }
 
-LFO_mode_enum mixer_get_LFO_mode(void) {
+LFO_mode_enum mixer_get_LFO_mode() {
 	return mixer_LFO_mode;
+}
+
+LFO_mode_enum mixer_get_LFO2_mode() {
+	return mixer_LFO2_mode;
 }
 
 bool mixer_get_filter_en() {
@@ -153,7 +171,6 @@ void mixer_cycle_wave(wave_shape_enum* w_shape_ptr) {
 		*w_shape_ptr = SINE;
 		break;
 	}
-
 }
 
 void mixer_cycle_mode() {
@@ -172,13 +189,13 @@ void mixer_cycle_mode() {
 	}
 }
 
-void mixer_cycle_LFO_mode() {
-	switch(mixer_LFO_mode) {
-	case VOLUME:
-		mixer_LFO_mode = PITCH;
+void mixer_cycle_LFO_mode(LFO_mode_enum* lfo_mode_ptr) {
+	switch(*lfo_mode_ptr) {
+	case LFO_VOLUME:
+		*lfo_mode_ptr = LFO_PITCH;
 		break;
-	case PITCH:
-		mixer_LFO_mode = VOLUME;
+	case LFO_PITCH:
+		*lfo_mode_ptr = LFO_VOLUME;
 		break;
 	default:
 		break;
@@ -187,6 +204,10 @@ void mixer_cycle_LFO_mode() {
 
 void mixer_LFO_toggle() {
 	mixer_LFO_en = !mixer_LFO_en;
+}
+
+void mixer_LFO2_toggle() {
+	mixer_LFO2_en = !mixer_LFO2_en;
 }
 
 void mixer_PWM_toggle() {
@@ -218,14 +239,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		case BUTTON_WAVE_MODE_Pin:
 			mixer_cycle_mode();
 			break;
-		case BUTTON_LFO_ENABLE_Pin:
-			mixer_LFO_toggle();
+		case BUTTON_LFO_Pin:
+			mixer_cycle_LFO_mode(&mixer_LFO_mode);
 			break;
 		case BUTTON_PWM_ENABLE_Pin:
 			mixer_PWM_toggle();
 			break;
-		case BUTTON_LFO_MODE_Pin:
-			mixer_cycle_LFO_mode();
+		case BUTTON_LFO2_Pin:
+			mixer_cycle_LFO_mode(&mixer_LFO2_mode);
 			break;
 		case BUTTON_FILTER_ENABLE_Pin:
 			mixer_filter_toggle();

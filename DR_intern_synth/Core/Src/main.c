@@ -175,6 +175,7 @@ int main(void)
 	filter_hp_RC_init(1, DELTA_T_DEFAULT);
 
 	output_handler_init(MIDI_get_n_voices());
+
 	wave_shape_enum wave_shape;
 	wave_out_mode_enum wave_mode;
 
@@ -522,7 +523,7 @@ void MX_I2S3_Init(void)
   hi2s3.Init.Standard = I2S_STANDARD_PHILIPS;
   hi2s3.Init.DataFormat = I2S_DATAFORMAT_16B;
   hi2s3.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
-  hi2s3.Init.AudioFreq = I2S_AUDIOFREQ_48K;
+  hi2s3.Init.AudioFreq = I2S_AUDIOFREQ_44K;
   hi2s3.Init.CPOL = I2S_CPOL_LOW;
   hi2s3.Init.ClockSource = I2S_CLOCK_PLL;
   hi2s3.Init.FullDuplexMode = I2S_FULLDUPLEXMODE_DISABLE;
@@ -702,10 +703,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
   HAL_GPIO_Init(CLK_IN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BUTTON_PITCH_TOGGLE_Pin BUTTON_FILTER_ENABLE_Pin BUTTON_PWM_ENABLE_Pin BUTTON_LFO_MODE_Pin
-                           BUTTON_LFO_ENABLE_Pin BUTTON_WAVE_MODE_Pin BUTTON_WAVE_CYCLE_Pin */
-  GPIO_InitStruct.Pin = BUTTON_PITCH_TOGGLE_Pin|BUTTON_FILTER_ENABLE_Pin|BUTTON_PWM_ENABLE_Pin|BUTTON_LFO_MODE_Pin
-                          |BUTTON_LFO_ENABLE_Pin|BUTTON_WAVE_MODE_Pin|BUTTON_WAVE_CYCLE_Pin;
+  /*Configure GPIO pins : BUTTON_PITCH_TOGGLE_Pin BUTTON_FILTER_ENABLE_Pin BUTTON_PWM_ENABLE_Pin BUTTON_LFO_Pin
+                           BUTTON_LFO2_Pin BUTTON_WAVE_MODE_Pin BUTTON_WAVE_CYCLE_Pin */
+  GPIO_InitStruct.Pin = BUTTON_PITCH_TOGGLE_Pin|BUTTON_FILTER_ENABLE_Pin|BUTTON_PWM_ENABLE_Pin|BUTTON_LFO_Pin
+                          |BUTTON_LFO2_Pin|BUTTON_WAVE_MODE_Pin|BUTTON_WAVE_CYCLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);

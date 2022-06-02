@@ -8,19 +8,16 @@
 #include <stdint.h>
 #include "output_handler.h"
 #include "mixer.h"
+#include "LFO.h"
+#include "PWM.h"
 
 static uint8_t n_voices;
 
 static float trackers[MAX_VOICES];
 static float steps[MAX_VOICES];
 
-static const float LFO_LIM = 16;
-static const float LFO_LIM_STEP_SZ = 8; //2~C0, 4~C1, 8~C2 etc
-static float LFO_tracker;
-
-
-uint16_t apply_effects(uint16_t in);
-uint16_t apply_filters(uint16_t in);
+uint16_t apply_effects(uint16_t out_val, uint16_t* wavetable);
+uint16_t apply_filters(uint16_t out_val);
 
 void output_handler_init(uint8_t MIDI_in_voices) {
 	if (MIDI_in_voices <= MAX_VOICES) {
@@ -71,7 +68,7 @@ void output_handler_init(uint8_t MIDI_in_voices) {
 void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_t out_len, uint16_t* wavetable) {
 
 	static uint16_t out_val;
-
+	static bool input_active;
 	static uint8_t tracker_sync; //make sure next keypress start on same index as previous
 
 	for (uint16_t i = out_start; i < out_len; i+=2) {
@@ -82,50 +79,50 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 				continue;
 			}
 
+			input_active = true;
+
 			trackers[j] += steps[j];
 			if(trackers[j] >= N_WT_SAMPLES) {
 				trackers[j] = trackers[j] - N_WT_SAMPLES;
 			}
 
-			if (mixer_is_PWM_en()) {
-				if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/MIXER_DIGI_REF)) {
-					out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
-				}
-			} else {
+//			if (mixer_is_PWM_en()) {
+//				if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/MIXER_DIGI_REF)) {
+//					out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
+//				}
+//			} else {
+//				out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
+//			}
+
+//			out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
+
+			if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/MIXER_DIGI_REF)) {
 				out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
 			}
 
-			if (mixer_is_LFO_en()) {
-				uint16_t lfo_val = wavetable[(uint16_t)LFO_tracker];
-				if (mixer_get_LFO_mode() == VOLUME) {
-					float lfo_scaled = (float)lfo_val/0xFFF;
-					out_val = out_val * lfo_scaled;
-//					LFO_tracker += ((float)mixer_get_LFO() + LFO_LIM)/MIXER_DIGI_REF;
-				} else if (mixer_get_LFO_mode() == PITCH) {
-					out_val = (out_val + wavetable[(uint16_t)LFO_tracker])/2;
-//					LFO_tracker += (float)mixer_get_LFO() * LFO_LIM/MIXER_DIGI_REF;
-				}
-
-//				LFO_tracker += ((float)mixer_get_LFO() + LFO_LIM)/MIXER_DIGI_REF;
-//				LFO_tracker += LFO_LIM + (float)mixer_get_LFO()/MIXER_DIGI_REF;
-				float scaled = (float)mixer_get_LFO()/MIXER_DIGI_REF;
-				LFO_tracker+= (float)LFO_LIM_STEP_SZ * scaled;
-				if (LFO_tracker > N_WT_SAMPLES) {
-					LFO_tracker -= N_WT_SAMPLES;
-				}
-			}
 			tracker_sync = j;
+
+			if (mixer_get_filter_en()) {
+				out_val = apply_filters(out_val);
+			}
 		}
 
-		if (mixer_get_filter_en()) {
-			out_val = apply_filters(out_val);
-		}
+		if (input_active)
+			out_val = apply_effects(out_val, wavetable);
 
 		out[i] = out_val * ((float)mixer_get_volume()/MIXER_DIGI_REF);
 		out[i+1] = out[i];
+//		if (mixer_is_PWM_en()) {
+//			if (PWM_apply(mixer_get_PWM(), out_val, trackers[tracker_sync])) {
+//				out[i] = out_val * ((float)mixer_get_volume()/MIXER_DIGI_REF);
+//				out[i+1] = out[i];
+//			}
+//		} else {
+//			out[i] = out_val * ((float)mixer_get_volume()/MIXER_DIGI_REF);
+//			out[i+1] = out[i];
+//		}
 	}
-	//	HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
-
+	input_active = false;
 }
 
 //float output_handler_outwave_fupdate(
@@ -283,15 +280,22 @@ void output_handler_outwave_fupdate(
 //
 //}
 
-uint16_t apply_effects(uint16_t in) {
-	if (mixer_is_PWM_en()) {
-
+uint16_t apply_effects(uint16_t out_val, uint16_t* wavetable) {
+	if (mixer_get_LFO() > 0) {
+		out_val = LFO_apply(mixer_get_LFO(), out_val, wavetable, mixer_get_LFO_mode());
 	}
+
+	if (mixer_get_LFO2() > 0) {
+		out_val = LFO_apply(mixer_get_LFO2(), out_val, wavetable, mixer_get_LFO2_mode());
+	}
+
+	return out_val;
 }
 
 uint16_t apply_filters(uint16_t in) {
 	in = filter_lp_RC_get_next(in);
 //	in = filter_hp_RC_get_next(in);
+
 	return in;
 }
 

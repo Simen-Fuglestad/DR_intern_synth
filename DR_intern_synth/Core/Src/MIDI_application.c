@@ -27,7 +27,7 @@ static uint8_t input_key_tmp;
 static uint8_t keys_pressed = 0;
 
 /* Private function prototypes -----------------------------------------------*/
-void ProcessReceivedMidiData(uint8_t midi_code, uint8_t n);
+void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_note);
 
 /*-----------------------------------------------------------------------------*/
 /**
@@ -63,7 +63,7 @@ void MIDI_Application(void)
 void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
 {
 	for (uint8_t i = 0; i < RX_BUFF_SIZE; i+=MIDI_MSG_LEN) {
-		ProcessReceivedMidiData(MIDI_RX_Buffer[i], i);
+		ProcessReceivedMidiData(MIDI_RX_Buffer[i], MIDI_RX_Buffer[i + 2]);
 	}
 
 	USBH_MIDI_Receive(&hUsbHostFS, MIDI_RX_Buffer, RX_BUFF_SIZE); // start a new reception
@@ -93,11 +93,11 @@ uint8_t MIDI_get_n_voices() {
 	return POLY_INPUTS;
 }
 
-void ProcessReceivedMidiData(uint8_t midi_code, uint8_t n) {
+void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_note) {
 	switch(midi_code) {
 	case MIDI_CODE_NOTE_OFF:
 		if (keys_pressed > 0) {
-			input_key_tmp = MIDI_RX_Buffer[n+2];
+			input_key_tmp = midi_note;
 			for (uint8_t k = 0; k < POLY_INPUTS; k++) {
 				if (MIDI_input_keys[k] == input_key_tmp) {
 					MIDI_input_keys[k] = 0;
@@ -113,7 +113,7 @@ void ProcessReceivedMidiData(uint8_t midi_code, uint8_t n) {
 				next_key_index++;
 			}
 
-			MIDI_input_keys[next_key_index] = MIDI_RX_Buffer[n+2];
+			MIDI_input_keys[next_key_index] = midi_note;
 			keys_pressed++;
 
 			next_key_index = 0;
