@@ -18,7 +18,8 @@
 
 #define N_OCTAVES 			9// +1 accounts for 0th octave
 #define N_SEMITONES 		12
-#define OCTAVE_STEP 		1.059463 //octaves are divided into 12 semitones, 2^(1/12)
+#define OCTAVE_STEP_UP 		1.059463 //octaves are divided into 12 semitones, 2^(1/12)
+#define OCTAVE_STEP_DOWN	0.943874
 #define NOTE_C0_440HZ		16.352 // use as basis for building 440hz lookup table
 
 typedef enum {

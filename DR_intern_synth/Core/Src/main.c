@@ -227,6 +227,8 @@ int main(void)
 			i2s_tx_half = false;
 //			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 		}
+//		MX_USB_HOST_Process();
+//		MIDI_update_input_f(output_handler_get_steps(), f_base/2);
 
 		if (i2s_tx_cplt) {
 //			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);

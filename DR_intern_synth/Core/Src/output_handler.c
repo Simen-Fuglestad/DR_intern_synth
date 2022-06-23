@@ -109,6 +109,7 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 		}
 
 		out[i] = out_val * ((float)mixer_get_volume()/MIXER_DIGI_REF);
+//		out[i] = out_val;
 		out[i+1] = out[i];
 
 	}
