@@ -196,12 +196,14 @@ void mixer_cycle_mode() {
 
 void mixer_cycle_LFO_mode(LFO_mode_enum* lfo_mode_ptr) {
 	switch(*lfo_mode_ptr) {
-	case LFO_VOLUME:
+	case LFO_TREMOLO:
 		*lfo_mode_ptr = LFO_PITCH;
 		break;
 	case LFO_PITCH:
-		*lfo_mode_ptr = LFO_VOLUME;
+		*lfo_mode_ptr = LFO_VIB;
 		break;
+	case LFO_VIB:
+		*lfo_mode_ptr = LFO_TREMOLO;
 	default:
 		break;
 	}

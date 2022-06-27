@@ -9,9 +9,10 @@
 #define INC_LFO_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
-	LFO_VOLUME, LFO_PITCH
+	LFO_TREMOLO, LFO_PITCH, LFO_VIB
 } LFO_mode_enum;
 
 uint16_t LFO_apply(uint16_t mixer_in, uint16_t out_val, uint16_t* wt, LFO_mode_enum mode);

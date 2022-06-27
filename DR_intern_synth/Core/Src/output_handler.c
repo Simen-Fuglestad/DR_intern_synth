@@ -9,7 +9,6 @@
 #include "output_handler.h"
 #include "mixer.h"
 #include "LFO.h"
-#include "PWM.h"
 
 static uint8_t n_voices;
 
@@ -82,9 +81,11 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 			input_active = true;
 
 			trackers[j] += steps[j];
+
 			if(trackers[j] >= N_WT_SAMPLES) {
 				trackers[j] = trackers[j] - N_WT_SAMPLES;
 			}
+
 
 //			if (mixer_is_PWM_en()) {
 //				if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/MIXER_DIGI_REF)) {
@@ -100,6 +101,7 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 				out_val = (out_val + wavetable[(uint16_t)trackers[j]])/2;
 			}
 
+
 			tracker_sync = j;
 		}
 
@@ -111,6 +113,7 @@ void output_handler_outwave_AM_update(uint16_t* out, uint16_t out_start, uint16_
 		out[i] = out_val * ((float)mixer_get_volume()/MIXER_DIGI_REF);
 //		out[i] = out_val;
 		out[i+1] = out[i];
+
 
 	}
 	input_active = false;
