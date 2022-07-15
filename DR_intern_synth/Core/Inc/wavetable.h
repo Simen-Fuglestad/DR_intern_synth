@@ -21,7 +21,7 @@
 //#define N_WT_SAMPLES 2935 	//48khz mono
 //#define N_WT_SAMPLES 5872 	//48khz stereo
 //#define MAX_SAMPLE_SIZE 2691 	//44khz mono
-#define N_WT_SAMPLES 5381 	//44Khz stereo
+#define N_WT_SAMPLES 5380 	//44Khz stereo
 
 #include <stdint.h>
 #include "note_frequency.h"

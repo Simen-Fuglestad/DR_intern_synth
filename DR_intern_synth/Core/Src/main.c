@@ -156,8 +156,7 @@ int main(void)
 
 	nf_map_init_440(nf_map_440hz);
 
-	float f_base = nf_get_f440hz(SEMITONE_C, 0, nf_map_440hz); //use as basis for all subsequent waves
-	uint16_t f_base_n = f_base * 100;
+	float f_base = nf_get_f440hz(SEMITONE_C, 0, nf_map_440hz) / 2; //use as basis for all subsequent waves, divide by 2 to compensate for doubled buffer
 
 	wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
 	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
@@ -177,7 +176,6 @@ int main(void)
 	output_handler_init(MIDI_get_n_voices());
 
 	wave_shape_enum wave_shape;
-	wave_out_mode_enum wave_mode;
 
   /* USER CODE END 2 */
 
@@ -191,76 +189,44 @@ int main(void)
     MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
-		MIDI_update_input_f(output_handler_get_steps(), f_base/2);
-
-		filter_update();
+		MIDI_update_input_f(output_handler_get_steps(), f_base);
+		filter_update(); //NOTE: Filter needs to update BEFORE mixer
+		mixer_update();
 
 		if (i2s_tx_half) {
-//			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
 			wave_shape = mixer_get_waveshape_out();
-			wave_mode = mixer_get_wave_out_mode();
 
 			if (wave_shape == SINE) {
-				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_sine);
-				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N_HALF, out_wave_sine);
+				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_sine);
 			}
 			else if (wave_shape == SQUARE) {
-				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_square);
-				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N_HALF, out_wave_square);
+				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_square);
 			}
 			else if (wave_shape == TRIANGLE) {
-				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_tri);
-				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N_HALF, out_wave_tri);
+				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_tri);
 			}
 			else if (wave_shape == SAWTOOTH) {
-				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_saw);
-				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, 0, I2S_OUT_N_HALF, out_wave_saw);
+				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, out_wave_saw);
 			}
 			i2s_tx_half = false;
-//			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 		}
-//		MX_USB_HOST_Process();
-//		MIDI_update_input_f(output_handler_get_steps(), f_base/2);
 
 		if (i2s_tx_cplt) {
-//			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
 			wave_shape = mixer_get_waveshape_out();
-			wave_mode = mixer_get_wave_out_mode();
 
 			if (wave_shape == SINE) {
-				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_sine);
-				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_sine);
+				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_sine);
 			}
 			else if (wave_shape == SQUARE) {
-				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_square);
-				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_square);
+				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_square);
 			}
 			else if (wave_shape == TRIANGLE) {
-				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_tri);
-				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_tri);
+				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_tri);
 			}
 			else if (wave_shape == SAWTOOTH) {
-				if (wave_mode == AM)
-					output_handler_outwave_AM_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_saw);
-				else if (wave_mode == FM)
-					output_handler_outwave_fupdate(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_saw);
+				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, out_wave_saw);
 			}
 			i2s_tx_cplt = false;
-//			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 		}
 	}
   /* USER CODE END 3 */
@@ -558,7 +524,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 64;
+  htim3.Init.Prescaler = 32;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -685,12 +651,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(OTG_FS_PowerSwitchOn_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pin : BOOT1_Pin */
   GPIO_InitStruct.Pin = BOOT1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -705,10 +665,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
   HAL_GPIO_Init(CLK_IN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BUTTON_PITCH_TOGGLE_Pin BUTTON_FILTER_ENABLE_Pin BUTTON_PWM_ENABLE_Pin BUTTON_LFO_Pin
-                           BUTTON_LFO2_Pin BUTTON_WAVE_MODE_Pin BUTTON_WAVE_CYCLE_Pin */
-  GPIO_InitStruct.Pin = BUTTON_PITCH_TOGGLE_Pin|BUTTON_FILTER_ENABLE_Pin|BUTTON_PWM_ENABLE_Pin|BUTTON_LFO_Pin
-                          |BUTTON_LFO2_Pin|BUTTON_WAVE_MODE_Pin|BUTTON_WAVE_CYCLE_Pin;
+  /*Configure GPIO pins : BUTTON_OSC1_LFO_EN_Pin BUTTON_FM_LFO_EN_Pin BUTTON_OSC2_LFO_EN_Pin BUTTON_OSC1_MODE_Pin
+                           BUTTON_OSC2_MODE_Pin BUTTON_VIBRATO_ENABLE_Pin BUTTON_WAVE_CYCLE_Pin */
+  GPIO_InitStruct.Pin = BUTTON_OSC1_LFO_EN_Pin|BUTTON_FM_LFO_EN_Pin|BUTTON_OSC2_LFO_EN_Pin|BUTTON_OSC1_MODE_Pin
+                          |BUTTON_OSC2_MODE_Pin|BUTTON_VIBRATO_ENABLE_Pin|BUTTON_WAVE_CYCLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
