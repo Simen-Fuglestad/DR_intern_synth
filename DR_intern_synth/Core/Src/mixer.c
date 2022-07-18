@@ -11,6 +11,10 @@
 volatile static uint16_t mixer_DMA[MIXER_ADC1_CHANNELS];
 static uint16_t mixer_tmp[MIXER_ADC1_CHANNELS];
 
+static uint8_t avg_cnt;
+static const uint8_t adc_avg_n = 16;
+static uint32_t mixer_avg[MIXER_ADC1_CHANNELS];
+
 static ADC_HandleTypeDef* adc_ptr;
 
 static wave_shape_enum waveshape_out;
@@ -42,7 +46,7 @@ static int adc_hystereis_adapter = 0;
 
 static const uint16_t ADC_BITMASK = 0xFE0; // remove 5 LSB to handle fluctuations on ADC
 
-uint16_t adc_hysteresis(uint16_t next, uint16_t prev, uint16_t lim, uint16_t i);
+uint16_t adc_hysteresis(uint16_t next, uint16_t prev, uint16_t lim);
 
 
 void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
@@ -59,7 +63,7 @@ void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 	}
 }
 
-uint16_t adc_hysteresis(uint16_t next, uint16_t prev, uint16_t lim, uint16_t i) {
+uint16_t adc_hysteresis(uint16_t next, uint16_t prev, uint16_t lim) {
 	int a = abs(next - prev);
 
 	if (lim < a) {
@@ -72,11 +76,22 @@ uint16_t adc_hysteresis(uint16_t next, uint16_t prev, uint16_t lim, uint16_t i) 
 void mixer_update() {
 	if (mixer_adc_update_flag) {
 		mixer_adc_update_flag = false;
-		for (uint16_t i = 0; i < MIXER_ADC1_CHANNELS; i++) {
-			mixer_tmp[i] = adc_hysteresis(mixer_DMA[i], mixer_tmp[i], ADC_HYSTERESIS_MAX_LIM, i);
-//			mixer_tmp[i] = mixer_DMA[i] & ADC_BITMASK;
+		avg_cnt++;
+		if (avg_cnt <= adc_avg_n) {
+			for (uint16_t i = 0; i < MIXER_ADC1_CHANNELS; i++) {
+//				mixer_tmp[i] = adc_hysteresis(mixer_DMA[i], mixer_tmp[i], ADC_HYSTERESIS_MAX_LIM);
+				mixer_avg[i]+= adc_hysteresis(mixer_DMA[i], mixer_tmp[i], ADC_HYSTERESIS_MAX_LIM);
+				//			mixer_tmp[i] = mixer_DMA[i] & ADC_BITMASK;
+			}
+		} else {
+			for (uint16_t i = 0; i < MIXER_ADC1_CHANNELS; i++) {
+				mixer_tmp[i] = mixer_avg[i] >> 4; //divide by 16
+				mixer_avg[i] = 0;
+			}
+			avg_cnt = 0;
 		}
 	}
+
 
 	if (!btn_rdy) {
 		debounce_cnt++;
@@ -147,29 +162,29 @@ uint16_t mixer_get_PWM() {
 		return 0;
 }
 uint16_t mixer_get_fm() {
-//	static uint16_t threshold;
+	//	static uint16_t threshold;
 	if (mixer_tmp[FM_MOD_CHANNEL] >= MIXER_SOFT_CAP) {
-//		threshold = MIXER_SOFT_CAP >> 1;
+		//		threshold = MIXER_SOFT_CAP >> 1;
 		return mixer_tmp[FM_MOD_CHANNEL] - MIXER_SOFT_CAP;
 	} else {
-//		threshold = MIXER_SOFT_CAP;
+		//		threshold = MIXER_SOFT_CAP;
 		return 0;
 	}
-//	return mixer_tmp[FM_MOD_CHANNEL];
+	//	return mixer_tmp[FM_MOD_CHANNEL];
 }
 
 
 
 uint16_t mixer_get_df() {
-//	static uint16_t threshold_df;
+	//	static uint16_t threshold_df;
 	if (mixer_tmp[FM_DF_CHANNEL] >= MIXER_SOFT_CAP) {
-//		threshold_df = MIXER_SOFT_CAP >> 1;
+		//		threshold_df = MIXER_SOFT_CAP >> 1;
 		return mixer_tmp[FM_DF_CHANNEL] - MIXER_SOFT_CAP;
 	} else {
-//		threshold_df = MIXER_SOFT_CAP;
+		//		threshold_df = MIXER_SOFT_CAP;
 		return 0;
 	}
-//	return mixer_tmp[FM_DF_CHANNEL];
+	//	return mixer_tmp[FM_DF_CHANNEL];
 }
 
 uint16_t mixer_get_OSC1() {
@@ -177,7 +192,7 @@ uint16_t mixer_get_OSC1() {
 		return mixer_tmp[OSC1_CHANNEL] - MIXER_SOFT_CAP;
 	else
 		return 0;
-//	return mixer_tmp[OSC1_CHANNEL];
+	//	return mixer_tmp[OSC1_CHANNEL];
 }
 
 uint16_t mixer_get_OSC2() {
