@@ -11,8 +11,9 @@
 #include "output_handler.h"
 #include "mixer.h"
 
-
 static uint8_t poly_inputs;
+
+static const float VOL_RMS_SCALER = 1.0f/sqrt(2);
 
 static float trackers[MAX_VOICES];
 static float steps[MAX_VOICES];
@@ -99,7 +100,10 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 			out_sample = apply_filters(out_sample);
 			out_val = out_sample/active_voices;
 		}
-		out[i] = out_val * ((float)mixer_get_volume()/MIXER_DREF);
+		float vol = ((float)mixer_get_volume()/MIXER_DREF);
+//		out[i] = out_val * ((float)mixer_get_volume()/MIXER_DREF);
+		out_val = out_val + (active_voices * VOL_RMS_SCALER);
+		out[i] = out_val * vol;
 		out[i+1] = out[i];
 	}
 }
