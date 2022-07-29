@@ -12,6 +12,7 @@
 #include "usb_host.h"
 #include "mixer.h"
 #include "note_frequency.h"
+#include "envelope.h"
 
 /* Private define ------------------------------------------------------------*/
 
@@ -27,10 +28,14 @@ static const float OCT_U2				= OCTAVE_STEP_UP * OCTAVE_STEP_UP;
 static const float OCT_R2				= OCT_U2 - OCT_D2;
 
 #define POLY_INPUTS 10
+
+static uint8_t MIDI_active_codes[127];
 static uint8_t MIDI_input_keys[POLY_INPUTS];
 static uint8_t next_key_index = 0;
 static uint8_t input_key_tmp;
-static uint8_t keys_pressed = 0;
+static int keys_pressed = 0;
+
+static env_t envelopes[POLY_INPUTS];
 
 /* Private function prototypes -----------------------------------------------*/
 void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi_data2);
@@ -79,13 +84,11 @@ uint8_t* MIDI_get_input_keys(void) {
 	return MIDI_input_keys;
 }
 
-void MIDI_update_input_f(float* f_steps, float f_base) {
+void MIDI_update_input(float* f_steps) {
 	float pitch_factor;
 	pitch_factor = OCT_D2 + OCT_R2 *((float)MIDI_ctrl_pitch/MIDI_PITCH_REF);
-//	pitch_factor = 1;
-//	pitch_factor = ((float)(MIDI_ctrl_pitch_center + MIDI_pitch_ref))/MIDI_pitch_ref;
 	for (uint8_t i = 0; i < POLY_INPUTS; i++) {
-		float f = MIDI_key2f(MIDI_input_keys[i])/f_base;
+		float f = MIDI_key2f(MIDI_input_keys[i])/FREQ_BASE;
 		if (f < 1)
 			f = 0;
 		f_steps[i] = f * pitch_factor;
@@ -102,31 +105,39 @@ uint8_t MIDI_get_n_voices() {
 	return POLY_INPUTS;
 }
 
+env_t* MIDI_get_envelopes() {
+	return envelopes;
+}
+
+void MIDI_note_disable(int index) {
+	MIDI_input_keys[index] = 0;
+}
+
 void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi_data2) {
 	switch(midi_code) {
 	case MIDI_CODE_NOTE_OFF:
-		if (keys_pressed > 0) {
-			input_key_tmp = midi_data1;
-			for (uint8_t k = 0; k < POLY_INPUTS; k++) {
-				if (MIDI_input_keys[k] == input_key_tmp) {
-					MIDI_input_keys[k] = 0;
-					keys_pressed--;
-				}
-			}
-		}
+		MIDI_active_codes[midi_data1] = 0;
+		env_release(midi_data1);
+//		for (uint8_t k = 0; k < POLY_INPUTS; k++) {
+//			if (MIDI_input_keys[k] == midi_data1) {
+////				MIDI_input_keys[k] = 0;
+//				env_release(k);
+//			}
+//		}
 		break;
 
 	case MIDI_CODE_NOTE_ON:
-		if (keys_pressed < POLY_INPUTS) {
-			while(MIDI_input_keys[next_key_index] != 0) {
-				next_key_index++;
-			}
-
-			MIDI_input_keys[next_key_index] = midi_data1;
-			keys_pressed++;
-
-			next_key_index = 0;
+		while(MIDI_input_keys[next_key_index] != 0) {
+			next_key_index++;
 		}
+		if (next_key_index < 10 && MIDI_active_codes[midi_data1] == 0) {
+			MIDI_active_codes[midi_data1] = 1;
+			MIDI_input_keys[next_key_index] = midi_data1;
+
+			env_create(next_key_index, midi_data1);
+		}
+
+		next_key_index = 0;
 		break;
 	case MIDI_CODE_POLY_KEY_PRESS: ; //currently not registering any from microkey S25
 	int test_poly_br = 10;
@@ -136,8 +147,8 @@ void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi
 	int test_ctrl_br = 10;
 	break;
 	case MIDI_CODE_PITCH_BEND: ;
-		MIDI_ctrl_pitch = midi_data1 + (midi_data2 << 7);
-		break;
+	MIDI_ctrl_pitch = midi_data1 + (midi_data2 << 7);
+	break;
 	default:
 		break;
 	}

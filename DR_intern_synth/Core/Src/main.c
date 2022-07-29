@@ -22,19 +22,17 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-//#include "wave_gen.h"
+
 #include "usb_host.h"
 #include "wavetable.h"
 #include "timer_utils.h"
-#include "input_handler.h"
-//#include "DSP_utils.h"
 #include "MY_CS43L22.h"
 #include "filter.h"
 #include "modulator.h"
 #include "usbh_MIDI.h"
 #include "MIDI_application.h"
 #include "output_handler.h"
-//#include "oscillator.h"
+#include "envelope.h"
 
 /* USER CODE END Includes */
 
@@ -189,9 +187,11 @@ int main(void)
     MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
-		MIDI_update_input_f(output_handler_get_steps(), f_base);
 		filter_update(); //NOTE: Filter needs to update BEFORE mixer
 		mixer_update();
+
+		MIDI_update_input(output_handler_get_steps());
+		env_update_ADSR();
 
 		if (i2s_tx_half) {
 			wave_shape = mixer_get_waveshape_out();
@@ -524,7 +524,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 16;
+  htim3.Init.Prescaler = 8;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -571,9 +571,9 @@ static void MX_TIM7_Init(void)
 
   /* USER CODE END TIM7_Init 1 */
   htim7.Instance = TIM7;
-  htim7.Init.Prescaler = 100;
+  htim7.Init.Prescaler = 168-1;
   htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 65535;
+  htim7.Init.Period = 200-1;
   htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
   {
@@ -709,10 +709,10 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
-	if (htim == &htim3)
-		HAL_GPIO_TogglePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin);
-}
+//void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
+//	if (htim == &htim3)
+//		HAL_GPIO_TogglePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin);
+//}
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef* hi2s) {
 	if (hi2s == &hi2s3) {
