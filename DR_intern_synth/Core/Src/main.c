@@ -154,7 +154,7 @@ int main(void)
 
 	nf_map_init_440(nf_map_440hz);
 
-	float f_base = nf_get_f440hz(SEMITONE_C, 0, nf_map_440hz) / 2; //use as basis for all subsequent waves, divide by 2 to compensate for doubled buffer
+//	float f_base = nf_get_f440hz(SEMITONE_C, 0, nf_map_440hz) / 2; //use as basis for all subsequent waves, divide by 2 to compensate for doubled buffer
 
 	wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
 	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
@@ -186,7 +186,7 @@ int main(void)
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 
-    /* USER CODE BEGIN 3 */
+//    /* USER CODE BEGIN 3 */
 		filter_update(); //NOTE: Filter needs to update BEFORE mixer
 		mixer_update();
 
@@ -210,6 +210,10 @@ int main(void)
 			}
 			i2s_tx_half = false;
 		}
+//		MIDI_Application();
+//		MX_USB_HOST_Process();
+
+//		env_process_update();
 
 		if (i2s_tx_cplt) {
 			wave_shape = mixer_get_waveshape_out();

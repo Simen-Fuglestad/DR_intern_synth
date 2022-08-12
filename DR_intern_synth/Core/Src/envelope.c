@@ -13,7 +13,7 @@
 
 #define ENV_NS_MAX 64
 
-static const float ADSR_FACTOR = 500;
+static const uint16_t ADSR_FACTOR = 512;
 
 static float atc;
 static float dec;
@@ -99,56 +99,75 @@ env_t* env_map_get(uint8_t index) {
 
 void env_release(uint8_t midi_index) {
 	envelopes[midi_index].rel_rdy = true;
+	env_index_map[midi_index] = 0;
+}
+
+void env_process_update() {
+	static uint8_t index;
+	env_process(index);
+	index++;
+	if (index >= 10) { //nr of inputs
+		index = 0;
+	}
 }
 
 void env_process(uint8_t index) {
 	env_t* env = &envelopes[env_index_map[index]];
 	if (env->rel_rdy) {
 		env->env_stage = RELEASE;
+//		return;
 	}
 
 	switch(env->env_stage) {
+
+	case ENV_IDLE:
+		break;
+
 	case ATTACK:
-		env->scaler+=atc;
 		if (env->scaler >= 1) {
 			env->scaler = 1;
 			env->env_stage = DECAY;
+		} else {
+			env->scaler+=atc;
 		}
 
 		break;
 
 	case DECAY:
-		env->scaler -= dec;
 		if (env->scaler <= sus) {
 			env->scaler = sus;
 			env->env_stage = SUSTAIN;
-
+		} else {
+			env->scaler -= dec;
 		}
 
 		break;
 
 	case SUSTAIN:
-		//wait for release
+		env->scaler = sus;
 		break;
 
 	case RELEASE:
-		env->scaler -= rel;
-
 		if (env->scaler <= 0) {
 			env->scaler = 0;
 			env->env_stage = ENV_DONE;
 			env->rel_rdy = false;
+		} else {
+			env->scaler -= rel;
 		}
 
 		break;
 
 	case ENV_DONE:
 		MIDI_note_disable(env->input_index);
+		env->input_index = 0;
+//		env->scaler = 0;
 		env->MIDI_code = 0;
 		env->env_stage = ENV_IDLE;
 
 		break;
 	default:
+		env->env_stage = ENV_DONE;
 		break;
 	}
 }

@@ -28,14 +28,26 @@ static const float OCT_U2				= OCTAVE_STEP_UP * OCTAVE_STEP_UP;
 static const float OCT_R2				= OCT_U2 - OCT_D2;
 
 #define POLY_INPUTS 10
+#define N_MIDI_NOTES 127
 
-static uint8_t MIDI_active_codes[127];
+static uint8_t MIDI_active_codes[N_MIDI_NOTES];
 static uint8_t MIDI_input_keys[POLY_INPUTS];
 static uint8_t next_key_index = 0;
 static uint8_t input_key_tmp;
 static int keys_pressed = 0;
 
 static env_t envelopes[POLY_INPUTS];
+
+bool key_on_flag;
+bool key_off_flag;
+
+static uint8_t key_on_buffer[50];
+static uint8_t key_next_on;
+static uint8_t key_on_ind;
+
+static int test_key_on_events;
+static uint16_t key_next_off;
+static int test_key_off_events;
 
 /* Private function prototypes -----------------------------------------------*/
 void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi_data2);
@@ -84,6 +96,14 @@ uint8_t* MIDI_get_input_keys(void) {
 	return MIDI_input_keys;
 }
 
+//void MIDI_key_press_update() {
+//	if (key_on_flag) {
+//		key_on_flag = 0;
+//		key_on_buffer[key_on_ind] = key_next_on;
+//		key_on_index++;
+//	}
+//}
+
 void MIDI_update_input(float* f_steps) {
 	float pitch_factor;
 	pitch_factor = OCT_D2 + OCT_R2 *((float)MIDI_ctrl_pitch/MIDI_PITCH_REF);
@@ -116,17 +136,22 @@ void MIDI_note_disable(int index) {
 void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi_data2) {
 	switch(midi_code) {
 	case MIDI_CODE_NOTE_OFF:
+//		test_key_off_events++;
 		MIDI_active_codes[midi_data1] = 0;
 		env_release(midi_data1);
+
 //		for (uint8_t k = 0; k < POLY_INPUTS; k++) {
 //			if (MIDI_input_keys[k] == midi_data1) {
-////				MIDI_input_keys[k] = 0;
+//				MIDI_input_keys[k] = 0;
 //				env_release(k);
 //			}
 //		}
 		break;
 
 	case MIDI_CODE_NOTE_ON:
+//		MIDI_active_codes[midi_data1] = midi_data1;
+//		test_key_on_events++;
+
 		while(MIDI_input_keys[next_key_index] != 0) {
 			next_key_index++;
 		}

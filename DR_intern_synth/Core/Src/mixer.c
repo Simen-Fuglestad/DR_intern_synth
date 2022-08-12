@@ -52,6 +52,8 @@ uint16_t adc_hysteresis(uint16_t next, uint16_t prev, uint16_t lim);
 void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 	adc_ptr = adc_handle;
 
+
+
 	if (adc_ptr) {
 		HAL_StatusTypeDef tim_init = HAL_TIM_Base_Start_IT(htim);
 		HAL_StatusTypeDef adc_init = HAL_ADC_Start_DMA(adc_ptr, (uint32_t*)mixer_DMA, MIXER_ADC1_CHANNELS);

@@ -11,6 +11,8 @@
 #include "output_handler.h"
 #include "mixer.h"
 #include "envelope.h"
+#include "usb_host.h"
+#include "MIDI_application.h"
 
 static uint8_t poly_inputs;
 
@@ -68,8 +70,9 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 	float m2;
 	int idx;
 
-	for (uint16_t i = out_start; i < out_len - 1; i+=2) {
+	int usb_cnt;
 
+	for (uint16_t i = out_start; i < out_len - 1; i+=4) {
 		uint8_t active_voices = 0;
 		uint32_t out_sample = 0;
 
@@ -95,11 +98,9 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 
 
 			if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/MIXER_DREF)) {
-				float scaler = env_map_get(j)->scaler;
-//				float os = (float)wavetable[(uint16_t)idx];
-				out_sample += ((float)wavetable[(uint16_t)idx]) * scaler;
 				env_process(j);
-//				out_sample += (wavetable[(uint16_t)idx]);
+				float scaler = env_map_get(j)->scaler;
+				out_sample += (((float)wavetable[(uint16_t)idx]) * scaler);
 			}
 
 			trackers[j] += steps[j];
@@ -122,6 +123,8 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 //		out_val = out_val + (active_voices * VOL_RMS_SCALER);
 		out[i] = out_val * vol;
 		out[i+1] = out[i];
+		out[i+2] = out[i];
+		out[i+3] = out[i];
 	}
 }
 

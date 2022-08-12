@@ -22,7 +22,7 @@
 #define OCTAVE_STEP_DOWN	0.943874
 #define NOTE_C0_440HZ		16.352 // use as basis for building 440hz lookup table
 
-#define FREQ_BASE 			8.176 // c0 divided by 2
+#define FREQ_BASE 			8.176// c0 divided by 4
 
 typedef enum {
 	SEMITONE_C, SEMITONE_C_SHARP, SEMITONE_D, SEMITONE_D_SHARP, SEMITONE_E,
