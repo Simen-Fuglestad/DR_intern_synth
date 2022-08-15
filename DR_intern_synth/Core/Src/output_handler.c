@@ -34,40 +34,34 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 
 	static uint16_t out_val;
 
-//	static uint8_t tracker_sync;
-
 	float c0_baseline = 16.352;
-	float fs = 44000;
+	float fs = 22000;
 
-//	float fm = c0_baseline/2;
-	float fm = (float)mixer_get_fm()/1000;
-//	float fm = 0.216;
-	float df = (float)mixer_get_df()/1000;
-//	float df = 0.18;
-//	float fm = (float)mixer_get_fm()/(c0_baseline * 100);
-//	float df = (float)mixer_get_df()/(c0_baseline * 10);
+	float fm = (float)mixer_get_fm()/(1000);
+	float df = (float)mixer_get_df()/(c0_baseline * 100);
 
-	static float fm_steps[10];
+	static float df_steps[10];
 
-	for (size_t i = 0; i < poly_inputs; ++i) {
-		fm_steps[i] += steps[i] * fm;
-//		OCTAVE_STEP_DOWN
-		if (fm_steps[i] >= N_WT_SAMPLES) {
-			fm_steps[i] -= N_WT_SAMPLES;
-		}
-	}
+	float k_vals[poly_inputs];
 
 	float k;
-	if (fm > 0.01)
-		k = (df * fs) / (fm * 2 * M_PI * 2048);
-	else
-		k = 0;
+	for (size_t i = 0; i < poly_inputs; ++i) {
+		df_steps[i] += steps[i] * df;
+		if (df_steps[i] >= N_WT_SAMPLES) {
+			df_steps[i] -= N_WT_SAMPLES;
+		}
+		if (fm > 0.01)
+			k = (df * fs) / (fm * 2 * M_PI * 2048);
+		else
+			k = 0;
+		k_vals[i] = k;
+	}
 
+
+	uint16_t* mod_wt = wavetable_get_ptr(mixer_get_OSC_ws());
 	static float modulator;
-	static float modulator2;
 
 	float m;
-	float m2;
 	int idx;
 
 	for (uint16_t i = out_start; i < out_len - 1; i+=4) {
@@ -79,15 +73,15 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 			modulator -= N_WT_SAMPLES;
 		}
 
-		m = (wavetable[(uint16_t)modulator] - 2048) * k;
-
 
 		for (uint8_t j = 0; j < poly_inputs; ++j) {
 			if (!steps[j]) {
-//				trackers[j] = trackers[tracker_sync];
 				trackers[j] = 0;
 				continue;
 			}
+
+
+			m = (mod_wt[(uint16_t)modulator] - 2048) * k_vals[j];
 
 			idx = (int)(trackers[j] + m) % N_WT_SAMPLES;
 			if (idx < 0) {
