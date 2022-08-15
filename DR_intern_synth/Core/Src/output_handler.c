@@ -21,7 +21,7 @@ static uint8_t poly_inputs;
 static float trackers[MAX_VOICES];
 static float steps[MAX_VOICES];
 
-uint32_t apply_effects(uint32_t sample, uint16_t out_val_ind, uint16_t* wavetable);
+uint32_t apply_effects(uint32_t sample, uint16_t out_val_ind);
 uint32_t apply_filters(uint32_t sample);
 
 void output_handler_init(uint8_t MIDI_in_voices) {
@@ -112,7 +112,7 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 
 		}
 		if (active_voices) {
-			out_sample = apply_effects(out_sample, i, wavetable);
+			out_sample = apply_effects(out_sample, i);
 			out_sample = apply_filters(out_sample);
 			out_val = (out_sample)/active_voices;
 		}
@@ -126,13 +126,13 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 	}
 }
 
-uint32_t apply_effects(uint32_t sample_in, uint16_t out_val_ind, uint16_t* wavetable) {
+uint32_t apply_effects(uint32_t sample_in, uint16_t out_val_ind) {
 	if (mixer_get_OSC1() > 0) {
-		sample_in = OSC_apply(mixer_get_OSC1(), sample_in, out_val_ind, wavetable, mixer_get_OSC1_mode());
+		sample_in = OSC_apply(mixer_get_OSC1(), sample_in, out_val_ind, mixer_get_OSC1_mode());
 	}
 
 	if (mixer_get_OSC2() > 0) {
-		sample_in = OSC_apply(mixer_get_OSC2(), sample_in, out_val_ind, wavetable, mixer_get_OSC2_mode());
+		sample_in = OSC_apply(mixer_get_OSC2(), sample_in, out_val_ind, mixer_get_OSC2_mode());
 	}
 
 	return sample_in;

@@ -14,8 +14,35 @@
     #define M_PI 3.14159265358979323846
 #endif
 
+static uint16_t sine[N_WT_SAMPLES];
+static uint16_t square[N_WT_SAMPLES];
+static uint16_t triangle[N_WT_SAMPLES];
+static uint16_t sawtooth[N_WT_SAMPLES];
+
+void wavetable_init_all() {
+	wavetable_create(SINE, sine, 0xFFF, N_WT_SAMPLES, 1);
+	wavetable_create(SQUARE, square, 0xFFF, N_WT_SAMPLES, 1);
+	wavetable_create(TRIANGLE, triangle, 0xFFF, N_WT_SAMPLES, 1);
+	wavetable_create(SAWTOOTH, sawtooth, 0xFFF, N_WT_SAMPLES, 1);
+}
+
+uint16_t* wavetable_get_ptr(ws_enum wave) {
+	switch(wave) {
+	case SINE:
+		return sine;
+	case SQUARE:
+		return square;
+	case TRIANGLE:
+		return triangle;
+	case SAWTOOTH:
+		return sawtooth;
+	default:
+		break;
+	}
+}
+
 void wavetable_create(
-		wave_shape_enum waveshape, uint16_t* out, uint16_t ref_v,
+		ws_enum waveshape, uint16_t* out, uint16_t ref_v,
 		uint16_t ns, float amp) {
 	switch (waveshape) {
 	case SINE:

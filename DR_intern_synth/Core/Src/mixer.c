@@ -17,7 +17,7 @@ static uint32_t mixer_avg[MIXER_ADC1_CHANNELS];
 
 static ADC_HandleTypeDef* adc_ptr;
 
-static wave_shape_enum waveshape_out;
+static ws_enum waveshape_out;
 static wave_out_mode_enum wave_out_mode;
 
 static bool mixer_adc_update_flag;
@@ -30,6 +30,7 @@ static bool mixer_OSC2_en;
 
 static OSC_mode_enum mixer_OSC1_mode;
 static OSC_mode_enum mixer_OSC2_mode;
+static ws_enum mixer_OSC_ws;
 
 static bool mixer_PWM_en;
 
@@ -204,7 +205,11 @@ uint16_t mixer_get_OSC2() {
 		return 0;
 }
 
-wave_shape_enum mixer_get_waveshape_out() {
+ws_enum mixer_get_OSC_ws() {
+	return mixer_OSC_ws;
+}
+
+ws_enum mixer_get_waveshape_out() {
 	return waveshape_out;
 }
 
@@ -232,7 +237,7 @@ bool mixer_is_LFO_en() {
 	return mixer_OSC1_en;
 }
 
-void mixer_cycle_wave(wave_shape_enum* w_shape_ptr) {
+void mixer_cycle_wave(ws_enum* w_shape_ptr) {
 	switch (*w_shape_ptr) {
 	case SINE:
 		*w_shape_ptr = SQUARE;
@@ -324,15 +329,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 			mixer_cycle_OSC_mode(&mixer_OSC2_mode);
 			break;
 
+		case BUTTON_OSC_CYCLE_Pin:
+			mixer_cycle_wave(&mixer_OSC_ws);
+
+
 		default:
 			break;
 		}
 	}
-}
-
-
-uint16_t scale_mixer_val(uint16_t in, float start, float end) {
-
 }
 
 

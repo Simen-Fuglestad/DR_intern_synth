@@ -58,8 +58,9 @@ uint16_t mixer_get_df(void);
 uint16_t mixer_get_OSC1(void);
 uint16_t mixer_get_OSC2(void);
 uint16_t mixer_get_OSC3(void);
+ws_enum mixer_get_OSC_ws();
 
-wave_shape_enum mixer_get_waveshape_out(void);
+ws_enum mixer_get_waveshape_out(void);
 wave_out_mode_enum mixer_get_wave_out_mode(void);
 
 OSC_mode_enum mixer_get_OSC1_mode(void);
