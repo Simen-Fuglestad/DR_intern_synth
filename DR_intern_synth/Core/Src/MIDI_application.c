@@ -32,9 +32,9 @@ static const float OCT_R2				= OCT_U2 - OCT_D2;
 
 static uint8_t MIDI_active_codes[N_MIDI_NOTES];
 static uint8_t MIDI_input_keys[POLY_INPUTS];
-static uint8_t next_key_index = 0;
+static uint8_t next_key_index;
 static uint8_t input_key_tmp;
-static int keys_pressed = 0;
+static int keys_pressed;
 
 static env_t envelopes[POLY_INPUTS];
 
@@ -129,7 +129,7 @@ env_t* MIDI_get_envelopes() {
 	return envelopes;
 }
 
-void MIDI_note_disable(int index) {
+void MIDI_note_disable(uint8_t midi_code, int index) {
 	MIDI_input_keys[index] = 0;
 }
 
@@ -137,30 +137,33 @@ void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi
 	switch(midi_code) {
 	case MIDI_CODE_NOTE_OFF:
 //		test_key_off_events++;
-		MIDI_active_codes[midi_data1] = 0;
 		env_release(midi_data1);
 
-//		for (uint8_t k = 0; k < POLY_INPUTS; k++) {
-//			if (MIDI_input_keys[k] == midi_data1) {
-//				MIDI_input_keys[k] = 0;
-//				env_release(k);
-//			}
-//		}
 		break;
 
 	case MIDI_CODE_NOTE_ON:
-//		MIDI_active_codes[midi_data1] = midi_data1;
 //		test_key_on_events++;
 
-		while(MIDI_input_keys[next_key_index] != 0) {
-			next_key_index++;
-		}
-		if (next_key_index < 10 && MIDI_active_codes[midi_data1] == 0) {
-			MIDI_active_codes[midi_data1] = 1;
-			MIDI_input_keys[next_key_index] = midi_data1;
+		;
+		uint8_t next_free = 0;
 
-			env_create(next_key_index, midi_data1);
+		for(uint8_t i = 0; i < POLY_INPUTS; ++i) {
+			uint8_t midi = MIDI_input_keys[i];
+
+			if (midi == midi_data1) {
+				next_key_index = i;
+				break;
+			} else if (midi == 0) {
+				next_free = i;
+			}
 		}
+
+		if (next_free != 0 && next_key_index == 0) {
+			next_key_index = next_free;
+		}
+		MIDI_input_keys[next_key_index] = midi_data1;
+
+		env_create(next_key_index, midi_data1);
 
 		next_key_index = 0;
 		break;

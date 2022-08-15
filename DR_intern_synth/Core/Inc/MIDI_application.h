@@ -67,7 +67,7 @@ uint8_t* MIDI_get_input_keys(void);
 void MIDI_update_input(float* f_steps);
 float MIDI_key2f(uint8_t);
 uint8_t MIDI_get_n_voices();
-void MIDI_note_disable(int index);
+void MIDI_note_disable(uint8_t midi_code, int index);
 
 /*------------------------------------------------------------------------------*/
 #endif /* MIDI_APPLICATION_H_ */

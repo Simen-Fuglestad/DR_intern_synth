@@ -175,6 +175,10 @@ int main(void)
 
 	wave_shape_enum wave_shape;
 
+	while(env_update_ADSR()) {
+		//wait for ADSR
+	}
+
   /* USER CODE END 2 */
 
   /* Infinite loop */

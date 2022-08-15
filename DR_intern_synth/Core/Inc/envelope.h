@@ -34,7 +34,7 @@ void env_release(uint8_t index);
 void env_process(uint8_t index);
 void env_process_update();
 
-void env_update_ADSR();
+int env_update_ADSR();
 
 void env_timer_init(TIM_HandleTypeDef* htim);
 

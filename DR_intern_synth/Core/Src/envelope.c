@@ -13,7 +13,7 @@
 
 #define ENV_NS_MAX 64
 
-static const uint16_t ADSR_FACTOR = 512;
+static const uint16_t ADSR_FACTOR = 1024;
 
 static float atc;
 static float dec;
@@ -56,13 +56,15 @@ void env_ADSR_init() {
 }
 
 
-void env_update_ADSR() {
+int env_update_ADSR() {
 	if (mixer_get_updated()) {
 		atc_update();
 		dec_update();
 		sus_update();
 		rel_update();
+		return 0;
 	}
+	return -1;
 }
 
 void atc_update() {
@@ -152,14 +154,16 @@ void env_process(uint8_t index) {
 			env->scaler = 0;
 			env->env_stage = ENV_DONE;
 			env->rel_rdy = false;
+			MIDI_note_disable(env->MIDI_code, env->input_index);
 		} else {
+			env->rel_rdy = false;
 			env->scaler -= rel;
 		}
 
 		break;
 
 	case ENV_DONE:
-		MIDI_note_disable(env->input_index);
+		env_index_map[env->input_index] = 0;
 		env->input_index = 0;
 //		env->scaler = 0;
 		env->MIDI_code = 0;

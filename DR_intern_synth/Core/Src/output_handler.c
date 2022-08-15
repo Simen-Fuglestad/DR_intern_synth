@@ -70,8 +70,6 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 	float m2;
 	int idx;
 
-	int usb_cnt;
-
 	for (uint16_t i = out_start; i < out_len - 1; i+=4) {
 		uint8_t active_voices = 0;
 		uint32_t out_sample = 0;
