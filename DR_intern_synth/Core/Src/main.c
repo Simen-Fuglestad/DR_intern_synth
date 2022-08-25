@@ -74,11 +74,6 @@ uint16_t output_wave[N_WT_SAMPLES];
 #define I2S_OUT_N_HALF I2S_OUT_N/2
 uint16_t i2s_out[I2S_OUT_N];
 
-uint16_t out_wave_sine[I2S_OUT_N];
-uint16_t out_wave_square[I2S_OUT_N];
-uint16_t out_wave_tri[I2S_OUT_N];
-uint16_t out_wave_saw[I2S_OUT_N];
-
 bool i2s_tx_cplt = false;
 bool i2s_tx_half = false;
 
@@ -149,20 +144,13 @@ int main(void)
 
 	CS43_Init(hi2c1, MODE_I2S);
 	CS43_Enable_RightLeft(CS43_RIGHT_LEFT);
-	CS43_SetVolume(5);
+	CS43_SetVolume(1);
 	CS43_Start();
 
 	nf_map_init_440(nf_map_440hz);
 
-//	float f_base = nf_get_f440hz(SEMITONE_C, 0, nf_map_440hz) / 2; //use as basis for all subsequent waves, divide by 2 to compensate for doubled buffer
-
 	wavetable_init_all();
 
-
-//	wavetable_create(SINE, out_wave_sine, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
-//	wavetable_create(SQUARE, out_wave_square, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
-//	wavetable_create(TRIANGLE, out_wave_tri, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
-//	wavetable_create(SAWTOOTH, out_wave_saw, REF_V_DIGITAL_HEADPHONE, I2S_OUT_N, 1);
 
 	HAL_StatusTypeDef tx_init_status = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)i2s_out, I2S_OUT_N);
 
@@ -215,6 +203,9 @@ int main(void)
 			else if (wave_shape == SAWTOOTH) {
 				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, wavetable_get_ptr(SAWTOOTH));
 			}
+			else if (wave_shape == BOWSAW) {
+				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, wavetable_get_ptr(BOWSAW));
+			}
 			i2s_tx_half = false;
 		}
 //		MIDI_Application();
@@ -236,6 +227,9 @@ int main(void)
 			}
 			else if (wave_shape == SAWTOOTH) {
 				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, wavetable_get_ptr(SAWTOOTH));
+			}
+			else if (wave_shape == BOWSAW) {
+				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, wavetable_get_ptr(BOWSAW));
 			}
 			i2s_tx_cplt = false;
 		}
@@ -676,19 +670,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
   HAL_GPIO_Init(CLK_IN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BUTTON_OSC1_LFO_EN_Pin BUTTON_FM_LFO_EN_Pin BUTTON_OSC2_LFO_EN_Pin BUTTON_OSC1_MODE_Pin
-                           BUTTON_OSC2_MODE_Pin BUTTON_OSC_CYCLE_Pin BUTTON_WAVE_CYCLE_Pin */
-  GPIO_InitStruct.Pin = BUTTON_OSC1_LFO_EN_Pin|BUTTON_FM_LFO_EN_Pin|BUTTON_OSC2_LFO_EN_Pin|BUTTON_OSC1_MODE_Pin
-                          |BUTTON_OSC2_MODE_Pin|BUTTON_OSC_CYCLE_Pin|BUTTON_WAVE_CYCLE_Pin;
+  /*Configure GPIO pins : BUTTON_OSC3_CYCLE_Pin BUTTON_OSC2_CYCLE_Pin BUTTON_OSC1_CYCLE_Pin BUTTON_OUT_WAVE_CYCLE_Pin */
+  GPIO_InitStruct.Pin = BUTTON_OSC3_CYCLE_Pin|BUTTON_OSC2_CYCLE_Pin|BUTTON_OSC1_CYCLE_Pin|BUTTON_OUT_WAVE_CYCLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : BUTTON_LOOPER_Pin */
-  GPIO_InitStruct.Pin = BUTTON_LOOPER_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(BUTTON_LOOPER_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : Audio_RST_Pin */
   GPIO_InitStruct.Pin = Audio_RST_Pin;
@@ -710,9 +696,6 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(MEMS_INT2_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 

@@ -96,19 +96,12 @@ uint8_t* MIDI_get_input_keys(void) {
 	return MIDI_input_keys;
 }
 
-//void MIDI_key_press_update() {
-//	if (key_on_flag) {
-//		key_on_flag = 0;
-//		key_on_buffer[key_on_ind] = key_next_on;
-//		key_on_index++;
-//	}
-//}
-
 void MIDI_update_input(float* f_steps) {
 	float pitch_factor;
 	pitch_factor = OCT_D2 + OCT_R2 *((float)MIDI_ctrl_pitch/MIDI_PITCH_REF);
 	for (uint8_t i = 0; i < POLY_INPUTS; i++) {
-		float f = MIDI_key2f(MIDI_input_keys[i])/FREQ_BASE;
+		float fmidi = MIDI_key2f(MIDI_input_keys[i]);
+		float f = fmidi/FREQ_BASE;
 		if (f < 1)
 			f = 0;
 		f_steps[i] = f * pitch_factor;

@@ -23,7 +23,7 @@ static bool vib_rising				= true;
 //static const
 
 uint32_t OSC_apply(uint16_t mixer_in, uint32_t sample_in, uint16_t out_val_ind, OSC_mode_enum mode) {
-	uint16_t* wt = wavetable_get_ptr(mixer_get_OSC_ws());
+	uint16_t* wt = wavetable_get_ptr(mixer_get_OSC_ws(1));
 	uint16_t osc_val = wt[(uint16_t)OSC_tracker];
 	float osc_scaled = (float)osc_val/OSC_ref;
 

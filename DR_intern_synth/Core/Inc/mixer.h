@@ -27,16 +27,16 @@
 #define FILTER_LOW_CHANNEL	0
 #define FILTER_HIGH_CHANNEL	1
 #define VOLUME_CHANNEL 		2
-#define OSC1_CHANNEL 		3
+#define OSC2_FM		 		3
 #define ATTACK_CHANNEL 		4
 #define DECAY_CHANNEL		5
 #define SUSTAIN_CHANNEL		6
 #define RELEASE_CHANNEL		7
-#define FM_DF_CHANNEL		8
+#define OSC_DF				8
 #define PWM_CHANNEL			9
-#define FM_MOD_CHANNEL		10
-#define OSC2_CHANNEL		11
-#define PITCH_CHANNEL		12
+#define OSC1_FM				10
+#define OSC3_FM				11
+#define OVERDRIVE_CHANNEL	12
 
 void mixer_init(ADC_HandleTypeDef*  adc_handle, TIM_HandleTypeDef* htim);
 
@@ -53,13 +53,14 @@ uint16_t mixer_get_sustain(void);
 uint16_t mixer_get_release(void);
 uint16_t mixer_get_duty_cycle(void);
 uint16_t mixer_get_PWM(void);
-uint16_t mixer_get_fm(void);
+uint16_t mixer_get_OSC1_FM(void);
 uint16_t mixer_get_df(void);
-uint16_t mixer_get_OSC1(void);
-uint16_t mixer_get_OSC2(void);
+uint16_t mixer_get_OSC2_FM(void);
+uint16_t mixer_get_OSC3_FM(void);
 uint16_t mixer_get_OSC3(void);
-ws_enum mixer_get_OSC_ws();
+uint16_t mixer_get_overdrive(void);
 
+ws_enum mixer_get_OSC_ws(uint8_t n);
 ws_enum mixer_get_waveshape_out(void);
 wave_out_mode_enum mixer_get_wave_out_mode(void);
 

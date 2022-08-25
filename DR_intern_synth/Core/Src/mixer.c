@@ -30,7 +30,9 @@ static bool mixer_OSC2_en;
 
 static OSC_mode_enum mixer_OSC1_mode;
 static OSC_mode_enum mixer_OSC2_mode;
-static ws_enum mixer_OSC_ws;
+static ws_enum mixer_OSC1_ws;
+static ws_enum mixer_OSC2_ws;
+static ws_enum mixer_OSC3_ws;
 
 static bool mixer_PWM_en;
 
@@ -52,8 +54,6 @@ uint16_t adc_hysteresis(uint16_t next, uint16_t prev, uint16_t lim);
 
 void mixer_init(ADC_HandleTypeDef* adc_handle, TIM_HandleTypeDef* htim) {
 	adc_ptr = adc_handle;
-
-
 
 	if (adc_ptr) {
 		HAL_StatusTypeDef tim_init = HAL_TIM_Base_Start_IT(htim);
@@ -150,63 +150,62 @@ uint16_t mixer_get_release() {
 	return mixer_tmp[RELEASE_CHANNEL];
 }
 
-uint16_t mixer_get_duty_cycle(void) {
-	return mixer_tmp[FM_DF_CHANNEL];
-}
-
-uint16_t mixer_round_val(uint16_t val, uint16_t r) {
-
-}
-
 uint16_t mixer_get_PWM() {
 	if (mixer_tmp[PWM_CHANNEL] >= MIXER_SOFT_CAP)
 		return mixer_tmp[PWM_CHANNEL] - MIXER_SOFT_CAP;
 	else
 		return 0;
 }
-uint16_t mixer_get_fm() {
-	//	static uint16_t threshold;
-	if (mixer_tmp[FM_MOD_CHANNEL] >= MIXER_SOFT_CAP) {
-		//		threshold = MIXER_SOFT_CAP >> 1;
-		return mixer_tmp[FM_MOD_CHANNEL] - MIXER_SOFT_CAP;
-	} else {
-		//		threshold = MIXER_SOFT_CAP;
-		return 0;
-	}
-	//	return mixer_tmp[FM_MOD_CHANNEL];
-}
-
-
 
 uint16_t mixer_get_df() {
-	//	static uint16_t threshold_df;
-	if (mixer_tmp[FM_DF_CHANNEL] >= MIXER_SOFT_CAP) {
-		//		threshold_df = MIXER_SOFT_CAP >> 1;
-		return mixer_tmp[FM_DF_CHANNEL] - MIXER_SOFT_CAP;
+	if (mixer_tmp[OSC_DF] >= MIXER_SOFT_CAP) {
+		return mixer_tmp[OSC_DF] - MIXER_SOFT_CAP;
 	} else {
-		//		threshold_df = MIXER_SOFT_CAP;
 		return 0;
 	}
-	//	return mixer_tmp[FM_DF_CHANNEL];
 }
 
-uint16_t mixer_get_OSC1() {
-	if (mixer_tmp[OSC1_CHANNEL] >= MIXER_SOFT_CAP)
-		return mixer_tmp[OSC1_CHANNEL] - MIXER_SOFT_CAP;
+uint16_t mixer_get_OSC1_FM() {
+	if (mixer_tmp[OSC1_FM] >= MIXER_SOFT_CAP) {
+		return mixer_tmp[OSC1_FM] - MIXER_SOFT_CAP;
+	} else {
+		return 0;
+	}
+}
+
+uint16_t mixer_get_OSC2_FM() {
+	if (mixer_tmp[OSC2_FM] >= MIXER_SOFT_CAP)
+		return mixer_tmp[OSC2_FM] - MIXER_SOFT_CAP;
 	else
 		return 0;
-	//	return mixer_tmp[OSC1_CHANNEL];
 }
 
-uint16_t mixer_get_OSC2() {
-	if (mixer_tmp[OSC2_CHANNEL] >= MIXER_SOFT_CAP)
-		return mixer_tmp[OSC2_CHANNEL] - MIXER_SOFT_CAP;
+uint16_t mixer_get_OSC3_FM() {
+	if (mixer_tmp[OSC3_FM] >= MIXER_SOFT_CAP)
+		return mixer_tmp[OSC3_FM] - MIXER_SOFT_CAP;
 	else
 		return 0;
 }
 
-ws_enum mixer_get_OSC_ws() {
-	return mixer_OSC_ws;
+uint16_t mixer_get_overdrive() {
+	if (mixer_tmp[OVERDRIVE_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_tmp[OVERDRIVE_CHANNEL] - MIXER_SOFT_CAP;
+	else
+		return 0;
+}
+
+ws_enum mixer_get_OSC_ws(uint8_t n) {
+	switch(n) {
+	case 1:
+		return mixer_OSC1_ws;
+	case 2:
+		return mixer_OSC2_ws;
+	case 3:
+		return mixer_OSC3_ws;
+
+	default:
+		return;
+	}
 }
 
 ws_enum mixer_get_waveshape_out() {
@@ -247,6 +246,9 @@ void mixer_cycle_wave(ws_enum* w_shape_ptr) {
 		break;
 	case TRIANGLE:
 		*w_shape_ptr = SAWTOOTH;
+		break;
+	case SAWTOOTH:
+		*w_shape_ptr = BOWSAW;
 		break;
 	default:
 		*w_shape_ptr = SINE;
@@ -317,20 +319,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		btn_rdy = false;
 		switch(GPIO_Pin) {
 
-		case BUTTON_WAVE_CYCLE_Pin:
+		case BUTTON_OUT_WAVE_CYCLE_Pin:
 			mixer_cycle_wave(&waveshape_out);
 			break;
 
-		case BUTTON_OSC1_MODE_Pin:
-			mixer_cycle_OSC_mode(&mixer_OSC1_mode);
+		case BUTTON_OSC1_CYCLE_Pin:
+			mixer_cycle_wave(&mixer_OSC1_ws);
+
+		case BUTTON_OSC2_CYCLE_Pin:
+			mixer_cycle_wave(&mixer_OSC2_ws);
 			break;
 
-		case BUTTON_OSC2_MODE_Pin:
-			mixer_cycle_OSC_mode(&mixer_OSC2_mode);
+		case BUTTON_OSC3_CYCLE_Pin:
+			mixer_cycle_wave(&mixer_OSC3_ws);
 			break;
-
-		case BUTTON_OSC_CYCLE_Pin:
-			mixer_cycle_wave(&mixer_OSC_ws);
 
 
 		default:

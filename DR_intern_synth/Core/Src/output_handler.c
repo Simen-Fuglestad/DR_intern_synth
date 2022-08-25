@@ -11,12 +11,12 @@
 #include "output_handler.h"
 #include "mixer.h"
 #include "envelope.h"
-#include "usb_host.h"
-#include "MIDI_application.h"
 
 static uint8_t poly_inputs;
 
-#define VOL_RMS_SCALER 4095.0f/sqrt(2)
+static const float squares[10] = {
+		sqrt(1), sqrt(2), sqrt(3), sqrt(4), sqrt(5), sqrt(6), sqrt(7), sqrt(8), sqrt(9), sqrt(10)
+};
 
 static float trackers[MAX_VOICES];
 static float steps[MAX_VOICES];
@@ -30,41 +30,76 @@ void output_handler_init(uint8_t MIDI_in_voices) {
 	}
 }
 
-void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t out_len, uint16_t* wavetable) {
-
-	static uint16_t out_val;
+void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t out_stop, uint16_t* wavetable) {
+#define REF_CENTER 2048
+	static uint32_t out_val;
 
 	float c0_baseline = 16.352;
-	float fs = 22000;
+	float fs = 11000;
 
-	float fm = (float)mixer_get_fm()/(1000);
-	float df = (float)mixer_get_df()/(c0_baseline * 100);
+	float df = (float)mixer_get_df()/(c0_baseline * 200);
+
+	float fm = (float)mixer_get_OSC1_FM()/20000;
+
+	float fm2 = (float)mixer_get_OSC2_FM()/1000;
+
+	float fm3 = (float)mixer_get_OSC3_FM()/500;
 
 	static float df_steps[10];
 
-	float k_vals[poly_inputs];
+	float k1_vals[poly_inputs];
+	float k2_vals[poly_inputs];
+	float k3_vals[poly_inputs];
 
-	float k;
+	float k1;
+	float k2;
+	float k3;
+
 	for (size_t i = 0; i < poly_inputs; ++i) {
 		df_steps[i] += steps[i] * df;
 		if (df_steps[i] >= N_WT_SAMPLES) {
 			df_steps[i] -= N_WT_SAMPLES;
 		}
-		if (fm > 0.01)
-			k = (df * fs) / (fm * 2 * M_PI * 2048);
-		else
-			k = 0;
-		k_vals[i] = k;
+		if (fm > 0.01) {
+			k1 = (df * fs) / (fm * 2 * M_PI * REF_CENTER);
+		}
+		else {
+			k1 = 0;
+		}
+
+		if (fm2 > 0.01) {
+			k2 = (df * fs) / (fm2 * 2 * M_PI * REF_CENTER);
+		}
+		else {
+			k2 = 0;
+		}
+
+		if (fm3 > 0.01) {
+			k3 = (df * fs) / (fm3 * 2 * M_PI * REF_CENTER);
+		}
+		else {
+			k3 = 0;
+		}
+
+		k1_vals[i] = k1;
+		k2_vals[i] = k2;
+		k3_vals[i] = k3;
 	}
 
 
-	uint16_t* mod_wt = wavetable_get_ptr(mixer_get_OSC_ws());
+	uint16_t* mod_wt1 = wavetable_get_ptr(mixer_get_OSC_ws(1));
+	uint16_t* mod_wt2 = wavetable_get_ptr(mixer_get_OSC_ws(2));
+	uint16_t* mod_wt3 = wavetable_get_ptr(mixer_get_OSC_ws(3));
 	static float modulator;
+	static float modulator2;
+	static float modulator3;
 
-	float m;
+	float m1;
+	float m2;
+	float m3;
 	int idx;
 
-	for (uint16_t i = out_start; i < out_len - 1; i+=4) {
+	for (uint16_t i = out_start; i < out_stop - 3; i+=4) {
 		uint8_t active_voices = 0;
 		uint32_t out_sample = 0;
 
@@ -73,6 +108,15 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 			modulator -= N_WT_SAMPLES;
 		}
 
+		modulator2 += fm2;
+		if (modulator2 >= N_WT_SAMPLES) {
+			modulator2 -= N_WT_SAMPLES;
+		}
+
+		modulator3 += fm3;
+		if (modulator3 >= N_WT_SAMPLES) {
+			modulator3 -= N_WT_SAMPLES;
+		}
 
 		for (uint8_t j = 0; j < poly_inputs; ++j) {
 			if (!steps[j]) {
@@ -81,18 +125,43 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 			}
 
 
-			m = (mod_wt[(uint16_t)modulator] - 2048) * k_vals[j];
+			m1 = (mod_wt1[(uint16_t)modulator] - REF_CENTER) * k1_vals[j];
+			m2 = (mod_wt2[(uint16_t)modulator2] - REF_CENTER) * k2_vals[j];
+			m3 = (mod_wt3[(uint16_t)modulator3] - REF_CENTER) * k3_vals[j];
 
-			idx = (int)(trackers[j] + m) % N_WT_SAMPLES;
+
+			/*
+//			if (m1 >= N_WT_SAMPLES) {
+//				m1 -= N_WT_SAMPLES;
+//			}
+
+//			m2 = (mod_wt[(uint16_t)m1] - 2048) * k2_vals[j];
+//
+//			idx = (int)(trackers[j] + m2) % N_WT_SAMPLES;
+*/
+
+
+			idx = ((int)(trackers[j] + m1 + m2 + m3)) % N_WT_SAMPLES;
+//			idx = (idx + (int)(trackers[j] + m2)) % N_WT_SAMPLES;
+//			idx = (idx + (int)(trackers[j] + m3)) % N_WT_SAMPLES;
+
 			if (idx < 0) {
 				idx += N_WT_SAMPLES;
 			}
 
-
 			if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/MIXER_DREF)) {
 				env_process(j);
 				float scaler = env_map_get(j)->scaler;
-				out_sample += (((float)wavetable[(uint16_t)idx]) * scaler);
+
+				float ovrd = (float)mixer_get_overdrive()/MIXER_DREF + 1;
+				uint16_t tmp = (float)wavetable[idx] * ovrd;
+				if (tmp > 0xFFF) {
+					tmp -= 0xFFF;
+				}
+				out_sample += tmp * scaler;
+
+//				out_sample += ((float)wavetable[idx]) * scaler;
+
 			}
 
 			trackers[j] += steps[j];
@@ -103,16 +172,24 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 
 			active_voices++;
 
+		}
+
+
+		if (active_voices) {
+//			out_sample = apply_effects(out_sample, i);
+			out_sample = apply_filters(out_sample);
+			out_val = (out_sample)/squares[active_voices - 1];
+
 
 		}
-		if (active_voices) {
-			out_sample = apply_effects(out_sample, i);
-			out_sample = apply_filters(out_sample);
-			out_val = (out_sample)/active_voices;
-		}
-		float vol = ((float)mixer_get_volume()/MIXER_DREF);
-//		out[i] = out_val * ((float)mixer_get_volume()/MIXER_DREF);
-//		out_val = out_val + (active_voices * VOL_RMS_SCALER);
+		float vol = (float)mixer_get_volume()/MIXER_DREF;
+//		out_val *= (vol*out_val + active_voices * sqrt(2)); //super loud but fun (TURN DOWN VOLUME!)
+
+//		out_val = (out_val * out_val * 0.5);
+
+//		out_val *= 1.1;
+//		if (out_val > 0xFFF) out_val = out_val % 0xFFF;
+
 		out[i] = out_val * vol;
 		out[i+1] = out[i];
 		out[i+2] = out[i];
@@ -121,12 +198,12 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 }
 
 uint32_t apply_effects(uint32_t sample_in, uint16_t out_val_ind) {
-	if (mixer_get_OSC1() > 0) {
-		sample_in = OSC_apply(mixer_get_OSC1(), sample_in, out_val_ind, mixer_get_OSC1_mode());
+	if (mixer_get_OSC2_FM() > 0) {
+		sample_in = OSC_apply(mixer_get_OSC2_FM(), sample_in, out_val_ind, mixer_get_OSC1_mode());
 	}
 
-	if (mixer_get_OSC2() > 0) {
-		sample_in = OSC_apply(mixer_get_OSC2(), sample_in, out_val_ind, mixer_get_OSC2_mode());
+	if (mixer_get_OSC3_FM() > 0) {
+		sample_in = OSC_apply(mixer_get_OSC3_FM(), sample_in, out_val_ind, mixer_get_OSC2_mode());
 	}
 
 	return sample_in;

@@ -21,13 +21,13 @@
 //#define N_WT_SAMPLES 2935 	//48khz mono
 //#define N_WT_SAMPLES 5872 	//48khz stereo
 //#define MAX_SAMPLE_SIZE 2691 	//44khz mono
-#define N_WT_SAMPLES 5384 	//44Khz stereo
+#define N_WT_SAMPLES 5384 	//44.05Khz stereo
 
 #include <stdint.h>
 #include "note_frequency.h"
 
 typedef enum {
-	SINE, SQUARE, TRIANGLE, SAWTOOTH
+	SINE, SQUARE, TRIANGLE, SAWTOOTH, BOWSAW
 } ws_enum;
 
 typedef enum {
@@ -43,9 +43,6 @@ void wavetable_init_all();
 uint16_t* wavetable_get_ptr(ws_enum wave);
 
 //Wave gen functions, create a single period T of ns samples
-void wavetable_create(
-		ws_enum waveshape, uint16_t* out, uint16_t ref_v,
-		uint16_t ns, float amp);
 
 void wavetable_create_sine(
 		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
@@ -58,5 +55,8 @@ void wavetable_create_triangle(
 
 void wavetable_create_sawtooth(
 		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
+
+void wavetable_create_bowsaw(
+		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp, uint16_t split_i);
 
 #endif /* INC_WAVETABLE_H_ */
