@@ -35,7 +35,8 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 	static uint32_t out_val;
 
 	float c0_baseline = 16.352;
-	float fs = 11000;
+	float fs = 22000;
+
 
 	float df = (float)mixer_get_df()/(c0_baseline * 200);
 
@@ -43,23 +44,19 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 
 	float fm2 = (float)mixer_get_OSC2_FM()/1000;
 
-	float fm3 = (float)mixer_get_OSC3_FM()/500;
+	static const float PHI_SCALER = (float)N_WT_SAMPLES/MIXER_DREF;
+	float phi_c = mixer_get_OSC3_FM() * PHI_SCALER;
 
-	static float df_steps[10];
+	float pm_ft = (float)mixer_get_pm_f()/MIXER_DREF;
 
 	float k1_vals[poly_inputs];
 	float k2_vals[poly_inputs];
-	float k3_vals[poly_inputs];
 
 	float k1;
 	float k2;
-	float k3;
 
 	for (size_t i = 0; i < poly_inputs; ++i) {
-		df_steps[i] += steps[i] * df;
-		if (df_steps[i] >= N_WT_SAMPLES) {
-			df_steps[i] -= N_WT_SAMPLES;
-		}
+
 		if (fm > 0.01) {
 			k1 = (df * fs) / (fm * 2 * M_PI * REF_CENTER);
 		}
@@ -74,29 +71,19 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 			k2 = 0;
 		}
 
-		if (fm3 > 0.01) {
-			k3 = (df * fs) / (fm3 * 2 * M_PI * REF_CENTER);
-		}
-		else {
-			k3 = 0;
-		}
-
 		k1_vals[i] = k1;
 		k2_vals[i] = k2;
-		k3_vals[i] = k3;
 	}
 
 
 	uint16_t* mod_wt1 = wavetable_get_ptr(mixer_get_OSC_ws(1));
 	uint16_t* mod_wt2 = wavetable_get_ptr(mixer_get_OSC_ws(2));
-	uint16_t* mod_wt3 = wavetable_get_ptr(mixer_get_OSC_ws(3));
 	static float modulator;
 	static float modulator2;
-	static float modulator3;
 
 	float m1;
 	float m2;
-	float m3;
+
 	int idx;
 
 	for (uint16_t i = out_start; i < out_stop - 3; i+=4) {
@@ -113,11 +100,6 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 			modulator2 -= N_WT_SAMPLES;
 		}
 
-		modulator3 += fm3;
-		if (modulator3 >= N_WT_SAMPLES) {
-			modulator3 -= N_WT_SAMPLES;
-		}
-
 		for (uint8_t j = 0; j < poly_inputs; ++j) {
 			if (!steps[j]) {
 				trackers[j] = 0;
@@ -127,40 +109,33 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 
 			m1 = (mod_wt1[(uint16_t)modulator] - REF_CENTER) * k1_vals[j];
 			m2 = (mod_wt2[(uint16_t)modulator2] - REF_CENTER) * k2_vals[j];
-			m3 = (mod_wt3[(uint16_t)modulator3] - REF_CENTER) * k3_vals[j];
 
+			int m;
+			if (phi_c) {
+				int tmp_idx = ((int)(trackers[j] * (1 + pm_ft))) % N_WT_SAMPLES;
+				m = wavetable[tmp_idx];
+			}
+			else
+				m = trackers[j];
 
-			/*
-//			if (m1 >= N_WT_SAMPLES) {
-//				m1 -= N_WT_SAMPLES;
-//			}
-
-//			m2 = (mod_wt[(uint16_t)m1] - 2048) * k2_vals[j];
-//
-//			idx = (int)(trackers[j] + m2) % N_WT_SAMPLES;
-*/
-
-
-			idx = ((int)(trackers[j] + m1 + m2 + m3)) % N_WT_SAMPLES;
-//			idx = (idx + (int)(trackers[j] + m2)) % N_WT_SAMPLES;
-//			idx = (idx + (int)(trackers[j] + m3)) % N_WT_SAMPLES;
+			//y(t) = Ac sin(wct + mt + phi_c)
+//			float wct = (trackers[j] + 2048)/((float)N_WT_SAMPLES);
+			idx = ((int)(m + m1 + m2 + phi_c)) % N_WT_SAMPLES;
 
 			if (idx < 0) {
 				idx += N_WT_SAMPLES;
 			}
 
+
 			if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/MIXER_DREF)) {
 				env_process(j);
 				float scaler = env_map_get(j)->scaler;
 
-				float ovrd = (float)mixer_get_overdrive()/MIXER_DREF + 1;
-				uint16_t tmp = (float)wavetable[idx] * ovrd;
-				if (tmp > 0xFFF) {
-					tmp -= 0xFFF;
+				uint16_t next_sample = (float)wavetable[idx];
+				if (next_sample > 0xFFF) {
+					next_sample -= 0xFFF;
 				}
-				out_sample += tmp * scaler;
-
-//				out_sample += ((float)wavetable[idx]) * scaler;
+				out_sample += next_sample * scaler;
 
 			}
 
@@ -178,17 +153,13 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 		if (active_voices) {
 //			out_sample = apply_effects(out_sample, i);
 			out_sample = apply_filters(out_sample);
+
 			out_val = (out_sample)/squares[active_voices - 1];
 
 
 		}
 		float vol = (float)mixer_get_volume()/MIXER_DREF;
 //		out_val *= (vol*out_val + active_voices * sqrt(2)); //super loud but fun (TURN DOWN VOLUME!)
-
-//		out_val = (out_val * out_val * 0.5);
-
-//		out_val *= 1.1;
-//		if (out_val > 0xFFF) out_val = out_val % 0xFFF;
 
 		out[i] = out_val * vol;
 		out[i+1] = out[i];

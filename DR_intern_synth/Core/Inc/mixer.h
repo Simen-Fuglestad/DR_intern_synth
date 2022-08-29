@@ -35,8 +35,8 @@
 #define OSC_DF				8
 #define PWM_CHANNEL			9
 #define OSC1_FM				10
-#define OSC3_FM				11
-#define OVERDRIVE_CHANNEL	12
+#define PM_F_CHANNEL		11
+#define PM_PHI_CHANNEL		12
 
 void mixer_init(ADC_HandleTypeDef*  adc_handle, TIM_HandleTypeDef* htim);
 
@@ -57,8 +57,8 @@ uint16_t mixer_get_OSC1_FM(void);
 uint16_t mixer_get_df(void);
 uint16_t mixer_get_OSC2_FM(void);
 uint16_t mixer_get_OSC3_FM(void);
-uint16_t mixer_get_OSC3(void);
-uint16_t mixer_get_overdrive(void);
+uint16_t mixer_get_pm_phi(void);
+uint16_t mixer_get_pm_f(void);
 
 ws_enum mixer_get_OSC_ws(uint8_t n);
 ws_enum mixer_get_waveshape_out(void);

@@ -181,15 +181,15 @@ uint16_t mixer_get_OSC2_FM() {
 }
 
 uint16_t mixer_get_OSC3_FM() {
-	if (mixer_tmp[OSC3_FM] >= MIXER_SOFT_CAP)
-		return mixer_tmp[OSC3_FM] - MIXER_SOFT_CAP;
+	if (mixer_tmp[PM_F_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_tmp[PM_F_CHANNEL] - MIXER_SOFT_CAP;
 	else
 		return 0;
 }
 
-uint16_t mixer_get_overdrive() {
-	if (mixer_tmp[OVERDRIVE_CHANNEL] >= MIXER_SOFT_CAP)
-		return mixer_tmp[OVERDRIVE_CHANNEL] - MIXER_SOFT_CAP;
+uint16_t mixer_get_pm_f() {
+	if (mixer_tmp[PM_PHI_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_tmp[PM_PHI_CHANNEL] - MIXER_SOFT_CAP;
 	else
 		return 0;
 }
