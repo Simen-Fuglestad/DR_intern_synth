@@ -38,51 +38,49 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 	float fs = 22000;
 
 
-	float df = (float)mixer_get_df()/(c0_baseline * 200);
+	float df = (float)mixer_get_df()/(c0_baseline * 1000);
 
-	float fm = (float)mixer_get_OSC1_FM()/20000;
+	float fm = (float)mixer_get_OSC1_FM()/(10000);
 
 	float fm2 = (float)mixer_get_OSC2_FM()/1000;
 
-	static const float PHI_SCALER = (float)N_WT_SAMPLES/MIXER_DREF;
-	float phi_c = mixer_get_OSC3_FM() * PHI_SCALER;
-
-	float pm_ft = (float)mixer_get_pm_f()/MIXER_DREF;
-
-	float k1_vals[poly_inputs];
-	float k2_vals[poly_inputs];
+	float beta = (float)mixer_get_pm_beta()/4095; //0-1
+	float beta2 = (float)mixer_get_pm_beta2()/409.5; //0-10
 
 	float k1;
 	float k2;
 
-	for (size_t i = 0; i < poly_inputs; ++i) {
+	if (fm > 0.01) {
+		k1 = (df * fs) / (fm * 2 * M_PI * REF_CENTER);
+	}
+	else {
+		k1 = 0;
+	}
 
-		if (fm > 0.01) {
-			k1 = (df * fs) / (fm * 2 * M_PI * REF_CENTER);
-		}
-		else {
-			k1 = 0;
-		}
-
-		if (fm2 > 0.01) {
-			k2 = (df * fs) / (fm2 * 2 * M_PI * REF_CENTER);
-		}
-		else {
-			k2 = 0;
-		}
-
-		k1_vals[i] = k1;
-		k2_vals[i] = k2;
+	if (fm2 > 0.01) {
+		k2 = (df * fs) / (fm2 * 2 * M_PI * REF_CENTER);
+	}
+	else {
+		k2 = 0;
 	}
 
 
 	uint16_t* mod_wt1 = wavetable_get_ptr(mixer_get_OSC_ws(1));
 	uint16_t* mod_wt2 = wavetable_get_ptr(mixer_get_OSC_ws(2));
-	static float modulator;
-	static float modulator2;
+	uint16_t* mod_wt3 = wavetable_get_ptr(mixer_get_OSC_ws(3));
 
-	float m1;
-	float m2;
+	static float fm_modulator;
+	static float fm_modulator2;
+
+	float mf1;
+	float mf2;
+
+	static float pm_modulators[10];
+
+	static float pm_modulators2[10];
+
+	float mp;
+	float mp2;
 
 	int idx;
 
@@ -90,14 +88,14 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 		uint8_t active_voices = 0;
 		uint32_t out_sample = 0;
 
-		modulator += fm;
-		if (modulator >= N_WT_SAMPLES) {
-			modulator -= N_WT_SAMPLES;
+		fm_modulator += fm;
+		if (fm_modulator >= N_WT_SAMPLES) {
+			fm_modulator -= N_WT_SAMPLES;
 		}
 
-		modulator2 += fm2;
-		if (modulator2 >= N_WT_SAMPLES) {
-			modulator2 -= N_WT_SAMPLES;
+		fm_modulator2 += fm2;
+		if (fm_modulator2 >= N_WT_SAMPLES) {
+			fm_modulator2 -= N_WT_SAMPLES;
 		}
 
 		for (uint8_t j = 0; j < poly_inputs; ++j) {
@@ -106,21 +104,25 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 				continue;
 			}
 
+			mf1 = (mod_wt1[(uint16_t)(fm_modulator)] - REF_CENTER) * k1;
+			mf2 = (mod_wt2[(uint16_t)fm_modulator2] - REF_CENTER) * k2;
 
-			m1 = (mod_wt1[(uint16_t)modulator] - REF_CENTER) * k1_vals[j];
-			m2 = (mod_wt2[(uint16_t)modulator2] - REF_CENTER) * k2_vals[j];
+			float mult = mixer_get_PM_mult();
 
-			int m;
-			if (phi_c) {
-				int tmp_idx = ((int)(trackers[j] * (1 + pm_ft))) % N_WT_SAMPLES;
-				m = wavetable[tmp_idx];
+
+			pm_modulators[j] += steps[j] * mult;
+			if (pm_modulators[j] >= N_WT_SAMPLES) {
+				pm_modulators[j] -= N_WT_SAMPLES;
 			}
-			else
-				m = trackers[j];
+			mp = (mod_wt3[(uint16_t)pm_modulators[j]] - REF_CENTER) * beta;
 
-			//y(t) = Ac sin(wct + mt + phi_c)
-//			float wct = (trackers[j] + 2048)/((float)N_WT_SAMPLES);
-			idx = ((int)(m + m1 + m2 + phi_c)) % N_WT_SAMPLES;
+			pm_modulators2[j] += steps[j] * mult;
+			if (pm_modulators2[j] >= N_WT_SAMPLES) {
+				pm_modulators2[j] -= N_WT_SAMPLES;
+			}
+			mp2 = (mod_wt3[(uint16_t)pm_modulators2[j]] - REF_CENTER) * beta2;
+
+			idx = ((int)(trackers[j] + mp + mp2 + mf1 + mf2)) % N_WT_SAMPLES;
 
 			if (idx < 0) {
 				idx += N_WT_SAMPLES;
@@ -131,7 +133,11 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 				env_process(j);
 				float scaler = env_map_get(j)->scaler;
 
-				uint16_t next_sample = (float)wavetable[idx];
+				int tmp = idx;
+				if (tmp >= N_WT_SAMPLES) {
+					tmp -= N_WT_SAMPLES;
+				}
+				uint16_t next_sample = (float)wavetable[tmp];
 				if (next_sample > 0xFFF) {
 					next_sample -= 0xFFF;
 				}
@@ -173,8 +179,8 @@ uint32_t apply_effects(uint32_t sample_in, uint16_t out_val_ind) {
 		sample_in = OSC_apply(mixer_get_OSC2_FM(), sample_in, out_val_ind, mixer_get_OSC1_mode());
 	}
 
-	if (mixer_get_OSC3_FM() > 0) {
-		sample_in = OSC_apply(mixer_get_OSC3_FM(), sample_in, out_val_ind, mixer_get_OSC2_mode());
+	if (mixer_get_pm_beta2() > 0) {
+		sample_in = OSC_apply(mixer_get_pm_beta2(), sample_in, out_val_ind, mixer_get_OSC2_mode());
 	}
 
 	return sample_in;

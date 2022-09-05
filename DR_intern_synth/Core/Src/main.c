@@ -670,6 +670,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
   HAL_GPIO_Init(CLK_IN_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : BUTTON_PHASE_MULT_Pin */
+  GPIO_InitStruct.Pin = BUTTON_PHASE_MULT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BUTTON_PHASE_MULT_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : BUTTON_OSC3_CYCLE_Pin BUTTON_OSC2_CYCLE_Pin BUTTON_OSC1_CYCLE_Pin BUTTON_OUT_WAVE_CYCLE_Pin */
   GPIO_InitStruct.Pin = BUTTON_OSC3_CYCLE_Pin|BUTTON_OSC2_CYCLE_Pin|BUTTON_OSC1_CYCLE_Pin|BUTTON_OUT_WAVE_CYCLE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;

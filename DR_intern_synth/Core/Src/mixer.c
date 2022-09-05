@@ -43,11 +43,15 @@ static uint8_t debounce_cnt = 20;
 void mixer_LFO_toggle(void);
 void mixer_LFO2_toggle(void);
 
+#define PM_MULT_LEN 12
+
+static const float MIXER_PM_MULTS[PM_MULT_LEN] = {
+		0.0625f, 0.25f, 0.5f, 0.75f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f
+};
+
+static int pm_mult_idx;
+
 static const uint16_t ADC_HYSTERESIS_MAX_LIM = 20;
-
-static int adc_hystereis_adapter = 0;
-
-static const uint16_t ADC_BITMASK = 0xFE0; // remove 5 LSB to handle fluctuations on ADC
 
 uint16_t adc_hysteresis(uint16_t next, uint16_t prev, uint16_t lim);
 
@@ -82,19 +86,16 @@ void mixer_update() {
 		avg_cnt++;
 		if (avg_cnt <= adc_avg_n) {
 			for (uint16_t i = 0; i < MIXER_ADC1_CHANNELS; i++) {
-//				mixer_tmp[i] = adc_hysteresis(mixer_DMA[i], mixer_tmp[i], ADC_HYSTERESIS_MAX_LIM);
 				mixer_avg[i]+= adc_hysteresis(mixer_DMA[i], mixer_tmp[i], ADC_HYSTERESIS_MAX_LIM);
-				//			mixer_tmp[i] = mixer_DMA[i] & ADC_BITMASK;
 			}
 		} else {
 			for (uint16_t i = 0; i < MIXER_ADC1_CHANNELS; i++) {
-				mixer_tmp[i] = mixer_avg[i] >> 4; //divide by 16
+				mixer_tmp[i] = mixer_avg[i] >> 4; //divide by 16, lowers resolution but reduces noise input
 				mixer_avg[i] = 0;
 			}
 			avg_cnt = 0;
 		}
 	}
-
 
 	if (!btn_rdy) {
 		debounce_cnt++;
@@ -158,38 +159,39 @@ uint16_t mixer_get_PWM() {
 }
 
 uint16_t mixer_get_df() {
-	if (mixer_tmp[OSC_DF] >= MIXER_SOFT_CAP) {
-		return mixer_tmp[OSC_DF] - MIXER_SOFT_CAP;
+	if (mixer_tmp[OSC_DF_CHANNEL] >= MIXER_SOFT_CAP) {
+		return mixer_tmp[OSC_DF_CHANNEL] - MIXER_SOFT_CAP;
 	} else {
 		return 0;
 	}
 }
 
 uint16_t mixer_get_OSC1_FM() {
-	if (mixer_tmp[OSC1_FM] >= MIXER_SOFT_CAP) {
-		return mixer_tmp[OSC1_FM] - MIXER_SOFT_CAP;
+	if (mixer_tmp[OSC1_FM_CHANNEL] >= MIXER_SOFT_CAP) {
+		return mixer_tmp[OSC1_FM_CHANNEL] - MIXER_SOFT_CAP;
 	} else {
 		return 0;
 	}
 }
 
 uint16_t mixer_get_OSC2_FM() {
-	if (mixer_tmp[OSC2_FM] >= MIXER_SOFT_CAP)
-		return mixer_tmp[OSC2_FM] - MIXER_SOFT_CAP;
+	if (mixer_tmp[OSC2_FM_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_tmp[OSC2_FM_CHANNEL] - MIXER_SOFT_CAP;
 	else
 		return 0;
 }
 
-uint16_t mixer_get_OSC3_FM() {
-	if (mixer_tmp[PM_F_CHANNEL] >= MIXER_SOFT_CAP)
-		return mixer_tmp[PM_F_CHANNEL] - MIXER_SOFT_CAP;
+uint16_t mixer_get_pm_beta() {
+	if (mixer_tmp[PM1_BETA_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_tmp[PM1_BETA_CHANNEL] - MIXER_SOFT_CAP;
 	else
 		return 0;
 }
 
-uint16_t mixer_get_pm_f() {
-	if (mixer_tmp[PM_PHI_CHANNEL] >= MIXER_SOFT_CAP)
-		return mixer_tmp[PM_PHI_CHANNEL] - MIXER_SOFT_CAP;
+
+uint16_t mixer_get_pm_beta2() {
+	if (mixer_tmp[PM2_BETA_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_tmp[PM2_BETA_CHANNEL] - MIXER_SOFT_CAP;
 	else
 		return 0;
 }
@@ -303,6 +305,14 @@ void mixer_filter_toggle() {
 	mixer_filter_en = !mixer_filter_en;
 }
 
+void mixer_PM_mult_cycle() {
+	pm_mult_idx = (pm_mult_idx + 1) % PM_MULT_LEN;
+}
+
+float mixer_get_PM_mult() {
+	return MIXER_PM_MULTS[pm_mult_idx];
+}
+
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
 	if (hadc == adc_ptr) {
 	}
@@ -332,6 +342,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 		case BUTTON_OSC3_CYCLE_Pin:
 			mixer_cycle_wave(&mixer_OSC3_ws);
+			break;
+
+		case BUTTON_PHASE_MULT_Pin:
+			mixer_PM_mult_cycle();
 			break;
 
 
