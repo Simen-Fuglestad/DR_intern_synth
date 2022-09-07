@@ -22,7 +22,7 @@
 #define MIXER_POTM_ERR		0.20f
 #define MIXER_SOFT_CAP		250 //caps values read by adc, prevents reading wrong values when sliders are down
 
-#define MIXER_ADC1_CHANNELS 13 //number of conversions in ADC1
+#define MIXER_ADC1_CHANNELS 14 //number of conversions in ADC1
 
 #define FILTER_LOW_CHANNEL	0
 #define FILTER_HIGH_CHANNEL	1
@@ -37,6 +37,7 @@
 #define OSC1_FM_CHANNEL		10
 #define PM1_BETA_CHANNEL	11
 #define PM2_BETA_CHANNEL	12
+#define PMF_CHANNEL			13
 
 void mixer_init(ADC_HandleTypeDef*  adc_handle, TIM_HandleTypeDef* htim);
 
@@ -58,6 +59,8 @@ uint16_t mixer_get_df(void);
 uint16_t mixer_get_OSC2_FM(void);
 uint16_t mixer_get_pm_beta2(void);
 uint16_t mixer_get_pm_beta(void);
+uint16_t mixer_get_pmf(void);
+bool mixer_get_sync();
 
 float mixer_get_PM_mult();
 void mixer_PM_mult_cycle();

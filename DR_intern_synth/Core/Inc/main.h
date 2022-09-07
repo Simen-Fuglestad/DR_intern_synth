@@ -75,6 +75,8 @@ void Error_Handler(void);
 #define MIXER_PWM_GPIO_Port GPIOC
 #define MIXER_OSC1_FM_Pin GPIO_PIN_3
 #define MIXER_OSC1_FM_GPIO_Port GPIOC
+#define MIXER_OSC_PMF_Pin GPIO_PIN_0
+#define MIXER_OSC_PMF_GPIO_Port GPIOA
 #define MIXER_FILTER_LOW_Pin GPIO_PIN_1
 #define MIXER_FILTER_LOW_GPIO_Port GPIOA
 #define MIXER_FILTER_HIGH_Pin GPIO_PIN_2

@@ -49,6 +49,8 @@ static const float MIXER_PM_MULTS[PM_MULT_LEN] = {
 		0.0625f, 0.25f, 0.5f, 0.75f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f
 };
 
+static bool mixer_sync;
+
 static int pm_mult_idx;
 
 static const uint16_t ADC_HYSTERESIS_MAX_LIM = 20;
@@ -196,6 +198,13 @@ uint16_t mixer_get_pm_beta2() {
 		return 0;
 }
 
+uint16_t mixer_get_pmf() {
+	if (mixer_tmp[PMF_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_tmp[PMF_CHANNEL] - 100;
+	else
+		return 0;
+}
+
 ws_enum mixer_get_OSC_ws(uint8_t n) {
 	switch(n) {
 	case 1:
@@ -313,6 +322,10 @@ float mixer_get_PM_mult() {
 	return MIXER_PM_MULTS[pm_mult_idx];
 }
 
+bool mixer_get_sync() {
+	return mixer_sync;
+}
+
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
 	if (hadc == adc_ptr) {
 	}
@@ -345,7 +358,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 			break;
 
 		case BUTTON_PHASE_MULT_Pin:
-			mixer_PM_mult_cycle();
+//			mixer_PM_mult_cycle();
+			mixer_sync = !mixer_sync;
 			break;
 
 

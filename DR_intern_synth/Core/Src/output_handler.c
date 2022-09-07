@@ -40,12 +40,20 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 
 	float df = (float)mixer_get_df()/(c0_baseline * 1000);
 
-	float fm = (float)mixer_get_OSC1_FM()/(10000);
+	float fm = (float)mixer_get_OSC1_FM()/(20000);
 
 	float fm2 = (float)mixer_get_OSC2_FM()/1000;
 
 	float beta = (float)mixer_get_pm_beta()/4095; //0-1
 	float beta2 = (float)mixer_get_pm_beta2()/409.5; //0-10
+
+	float ipmf  = (float)mixer_get_pmf()/0xFFF;
+//	pmf = roundf(pmf * 10)/10;
+
+#define octave_ratio 0.0833
+	float pmf_scaler = roundf(ipmf/octave_ratio);
+
+	float pmf = powf(1.059, pmf_scaler) + octave_ratio;
 
 	float k1;
 	float k2;
@@ -107,16 +115,28 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 			mf1 = (mod_wt1[(uint16_t)(fm_modulator)] - REF_CENTER) * k1;
 			mf2 = (mod_wt2[(uint16_t)fm_modulator2] - REF_CENTER) * k2;
 
-			float mult = mixer_get_PM_mult();
+//			float mult = mixer_get_PM_mult();
+			bool sync = mixer_get_sync();
 
+			if (sync) {
+				pm_modulators[j] += steps[j] * pmf;
+			} else {
+				pm_modulators[j] += steps[j];
+			}
 
-			pm_modulators[j] += steps[j] * mult;
 			if (pm_modulators[j] >= N_WT_SAMPLES) {
 				pm_modulators[j] -= N_WT_SAMPLES;
 			}
-			mp = (mod_wt3[(uint16_t)pm_modulators[j]] - REF_CENTER) * beta;
+			mp = (mod_wt2[(uint16_t)pm_modulators[j]] - REF_CENTER) * beta;
 
-			pm_modulators2[j] += steps[j] * mult;
+
+
+			if (sync) {
+				pm_modulators2[j] += steps[j] * pmf;
+			} else {
+				pm_modulators2[j] += steps[j];
+			}
+
 			if (pm_modulators2[j] >= N_WT_SAMPLES) {
 				pm_modulators2[j] -= N_WT_SAMPLES;
 			}
@@ -188,7 +208,7 @@ uint32_t apply_effects(uint32_t sample_in, uint16_t out_val_ind) {
 
 uint32_t apply_filters(uint32_t sample_in) {
 	sample_in = filter_lp_RC_get_next(sample_in);
-	sample_in = filter_hp_RC_get_next(sample_in);
+//	sample_in = filter_hp_RC_get_next(sample_in);
 
 	return sample_in;
 }
