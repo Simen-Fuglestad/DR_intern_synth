@@ -1,25 +1,25 @@
 /.metadata
-/DR_intern_synth/Debug
-/DR_intern_synth/Drivers
+*/DR_intern_synth/Debug
+*/DR_intern_synth/Drivers
 # /DR_intern_synth/Middlewares
 # /DR_intern_synth/USB_HOST
-/DR_intern_synth/STM32F411VETX_FLASH.ld
-/DR_intern_synth/STM32F411VETX_RAM.ld
+*/DR_intern_synth/STM32F411VETX_FLASH.ld
+*/DR_intern_synth/STM32F411VETX_RAM.ld
 # /DR_intern_synth/.project
-/DR_intern_synth/.mxproject
-/DR_intern_synth/.cproject
-/DR_intern_synth/.settings
-/DR_intern_synth/DR_intern_synth\ Debug.launch
+*/DR_intern_synth/.mxproject
+*/DR_intern_synth/.cproject
+*/DR_intern_synth/.settings
+*/DR_intern_synth/DR_intern_synth\ Debug.launch
 
-/DR_intern_synth/STM32F407VGTX_FLASH.ld
-/DR_intern_synth/STM32F407VGTX_RAM.ld
+*/DR_intern_synth/STM32F407VGTX_FLASH.ld
+*/DR_intern_synth/STM32F407VGTX_RAM.ld
 
-/DR_intern_synth/Core/Inc/stm32f4xx_hal_conf.h
-/DR_intern_synth/Core/Inc/stm32f4xx_it.h
+*/DR_intern_synth/Core/Inc/stm32f4xx_hal_conf.h
+*/DR_intern_synth/Core/Inc/stm32f4xx_it.h
 
-/DR_intern_synth/Core/Src/stm32f4xx_hal_msp.c
-/DR_intern_synth/Core/Src/stm32f4xx_it.c
-/DR_intern_synth/Core/Startup
-/DR_intern_synth/Core/Src/syscalls.c
-/DR_intern_synth/Core/Src/sysmem.c
-/DR_intern_synth/Core/Src/system_stm32f4xx.c
+*/DR_intern_synth/Core/Src/stm32f4xx_hal_msp.c
+*/DR_intern_synth/Core/Src/stm32f4xx_it.c
+*/DR_intern_synth/Core/Startup
+*/DR_intern_synth/Core/Src/syscalls.c
+*/DR_intern_synth/Core/Src/sysmem.c
+*/DR_intern_synth/Core/Src/system_stm32f4xx.c
