@@ -23,3 +23,12 @@
 */DR_intern_synth/Core/Src/syscalls.c
 */DR_intern_synth/Core/Src/sysmem.c
 */DR_intern_synth/Core/Src/system_stm32f4xx.c
+
+*/DR_intern_synth/*.cfg
+*/DR_intern_synth/Makefile
+*/DR_intern_synth/build
+*/DR_intern_synth/*.s
+*/DR_intern_synth/*.make
+*/DR_intern_synth/*.yaml
+*/DR_intern_synth/*.vscode
+*/DR_intern_synth/*.bak
