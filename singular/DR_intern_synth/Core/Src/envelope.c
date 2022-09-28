@@ -55,7 +55,6 @@ void env_ADSR_init() {
 	rel_update();
 }
 
-
 int env_update_ADSR() {
 	if (mixer_get_updated()) {
 		atc_update();
@@ -63,11 +62,14 @@ int env_update_ADSR() {
 		sus_update();
 		rel_update();
 		return 0;
+	} else {
+		int br = 1;
 	}
 	return -1;
 }
 
 void atc_update() {
+	// atc = (float)mixer_get_attack()/MIXER_DREF;
 	atc = (float)mixer_get_attack()/(MIXER_DREF * ADSR_FACTOR);
 }
 

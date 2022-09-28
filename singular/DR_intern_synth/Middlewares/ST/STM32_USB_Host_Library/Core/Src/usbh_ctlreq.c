@@ -469,7 +469,7 @@ static USBH_StatusTypeDef USBH_ParseCfgDesc(USBH_HandleTypeDef *phost, uint8_t *
                USB_ENDPOINT_DESC_SIZE for all other endpoints types */
             else if (pdesc->bLength != USB_ENDPOINT_DESC_SIZE)
             {
-//              pdesc->bLength = USB_ENDPOINT_DESC_SIZE;
+              pdesc->bLength = USB_ENDPOINT_DESC_SIZE;
             }
             else
             {

@@ -77,4 +77,10 @@ uint16_t filter_hp_RC_get_next(uint16_t x);
 uint16_t filter_hp_RC_get_fc(void);
 bool filter_hp_RC_get_active(void);
 
+//resonant
+
+void filter_res_init();
+uint16_t filter_res_update(uint32_t in);
+void filter_res_coeff_update();
+float filter_res_get_next();
 #endif /* INC_FILTER_H_ */

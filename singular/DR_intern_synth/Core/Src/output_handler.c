@@ -11,28 +11,33 @@
 #include "output_handler.h"
 #include "mixer.h"
 #include "envelope.h"
+#include "note_frequency.h"
 
 static uint8_t poly_inputs;
 
-static const float squares[10] = {
-		sqrt(1), sqrt(2), sqrt(3), sqrt(4), sqrt(5), sqrt(6), sqrt(7), sqrt(8), sqrt(9), sqrt(10)
-};
+static float squares[MAX_VOICES];
 
 static float trackers[MAX_VOICES];
 static float steps[MAX_VOICES];
 
-uint32_t apply_effects(uint32_t sample, uint16_t out_val_ind);
+uint32_t apply_effects(uint32_t sample);
 uint32_t apply_filters(uint32_t sample);
 
 void output_handler_init(uint8_t MIDI_in_voices) {
 	if (MIDI_in_voices <= MAX_VOICES) {
 		poly_inputs = MIDI_in_voices;
 	}
+
+	for (uint8_t i = 0; i < MAX_VOICES; i++) {
+		squares[i] = sqrt(i + 1);
+	}
 }
 
 void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t out_stop, uint16_t* wavetable) {
 #define REF_CENTER 2048
 	static uint32_t out_val;
+
+	static float global_tracker;
 
 	float c0_baseline = 16.352;
 	float fs = 22000;
@@ -71,7 +76,6 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 	else {
 		k2 = 0;
 	}
-
 
 	uint16_t* mod_wt1 = wavetable_get_ptr(mixer_get_OSC_ws(1));
 	uint16_t* mod_wt2 = wavetable_get_ptr(mixer_get_OSC_ws(2));
@@ -142,7 +146,13 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 			}
 			mp2 = (mod_wt3[(uint16_t)pm_modulators2[j]] - REF_CENTER) * beta2;
 
+			global_tracker += mp + mp2 + mf1 + mf2;
+
+			global_tracker = (int)global_tracker % N_WT_SAMPLES;
+			
+
 			idx = ((int)(trackers[j] + mp + mp2 + mf1 + mf2)) % N_WT_SAMPLES;
+			// idx = global_tracker + trackers[j];
 
 			if (idx < 0) {
 				idx += N_WT_SAMPLES;
@@ -162,7 +172,6 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 					next_sample -= 0xFFF;
 				}
 				out_sample += next_sample * scaler;
-
 			}
 
 			trackers[j] += steps[j];
@@ -177,10 +186,13 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 
 
 		if (active_voices) {
-//			out_sample = apply_effects(out_sample, i);
-			out_sample = apply_filters(out_sample);
+			// out_sample = apply_effects(out_sample);
+			// out_sample = apply_filters(out_sample);
+
+			//Add DC correction here, maybe
 
 			out_val = (out_sample)/squares[active_voices - 1];
+			out_val = apply_filters(out_val);
 
 
 		}
@@ -194,23 +206,24 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 	}
 }
 
-uint32_t apply_effects(uint32_t sample_in, uint16_t out_val_ind) {
+uint32_t apply_effects(uint32_t sample_in) {
 	if (mixer_get_OSC2_FM() > 0) {
-		sample_in = OSC_apply(mixer_get_OSC2_FM(), sample_in, out_val_ind, mixer_get_OSC1_mode());
+		sample_in = OSC_apply(mixer_get_OSC2_FM(), sample_in, mixer_get_OSC1_mode());
 	}
 
 	if (mixer_get_pm_beta2() > 0) {
-		sample_in = OSC_apply(mixer_get_pm_beta2(), sample_in, out_val_ind, mixer_get_OSC2_mode());
+		sample_in = OSC_apply(mixer_get_pm_beta2(), sample_in, mixer_get_OSC2_mode());
 	}
 
 	return sample_in;
 }
 
-uint32_t apply_filters(uint32_t sample_in) {
-	sample_in = filter_lp_RC_get_next(sample_in);
-//	sample_in = filter_hp_RC_get_next(sample_in);
+uint32_t apply_filters(uint32_t sample) {
+	sample = filter_res_update(sample);
+	// sample = filter_lp_RC_get_next(sample);
 
-	return sample_in;
+
+	return sample;
 }
 
 

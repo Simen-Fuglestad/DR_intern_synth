@@ -162,6 +162,8 @@ int main(void)
 
 	filter_hp_RC_init(1, DELTA_T_DEFAULT);
 
+  filter_res_init();
+
 	output_handler_init(MIDI_get_n_voices());
 
 	ws_enum wave_shape;

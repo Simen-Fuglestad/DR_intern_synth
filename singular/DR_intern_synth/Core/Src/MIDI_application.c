@@ -22,9 +22,9 @@ uint8_t MIDI_RX_Buffer[RX_BUFF_SIZE]; // MIDI reception buffer
 
 static const uint16_t MIDI_PITCH_REF 	= 0x3fff; //maximum when midi data bytes are 0x7f and 0x7f
 static uint16_t MIDI_ctrl_pitch 		= 0x2000; //centered when midi data bytes are 0x00 0x40
-static const float OCTAVE_STEP_RANGE 	= OCTAVE_STEP_UP - OCTAVE_STEP_DOWN;
-static const float OCT_D2 				= OCTAVE_STEP_DOWN * OCTAVE_STEP_DOWN;
-static const float OCT_U2				= OCTAVE_STEP_UP * OCTAVE_STEP_UP;
+static const float OCTAVE_STEP_RANGE 	= ST_STEP_UP - ST_STEP_DOWN;
+static const float OCT_D2 				= ST_STEP_DOWN * ST_STEP_DOWN;
+static const float OCT_U2				= ST_STEP_UP * ST_STEP_UP;
 static const float OCT_R2				= OCT_U2 - OCT_D2;
 
 #define POLY_INPUTS 10
@@ -137,7 +137,6 @@ void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi
 	case MIDI_CODE_NOTE_ON:
 //		test_key_on_events++;
 
-		;
 		uint8_t next_free = 0;
 
 		for(uint8_t i = 0; i < POLY_INPUTS; ++i) {

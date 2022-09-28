@@ -157,7 +157,7 @@ extern "C" {
 #define USB_CONFIGURATION_DESC_SIZE                        0x09U
 #define USB_HID_DESC_SIZE                                  0x09U
 #define USB_INTERFACE_DESC_SIZE                            0x09U
-#define USB_ENDPOINT_DESC_SIZE                             0x07U
+#define USB_ENDPOINT_DESC_SIZE                             0x09U
 
 /* Descriptor Type and Descriptor Index  */
 /* Use the following values when calling the function USBH_GetDescriptor  */

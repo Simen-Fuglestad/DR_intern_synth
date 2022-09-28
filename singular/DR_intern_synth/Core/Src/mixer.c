@@ -123,7 +123,6 @@ uint16_t mixer_get_filter_fc_low() {
 }
 
 
-
 uint16_t mixer_get_filter_fc_high() {
 	if (mixer_tmp[FILTER_HIGH_CHANNEL] >= MIXER_SOFT_CAP) {
 		return mixer_tmp[FILTER_HIGH_CHANNEL] - MIXER_SOFT_CAP;
