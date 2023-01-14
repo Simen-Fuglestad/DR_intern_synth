@@ -1,0 +1,5 @@
+../Core/Src/output_handler.c:26:6:output_handler_init	32	static
+../Core/Src/output_handler.c:36:6:output_handler_outwave_update	152	static
+../Core/Src/output_handler.c:209:10:apply_effects	32	static
+../Core/Src/output_handler.c:221:10:apply_filters	16	static
+../Core/Src/output_handler.c:230:8:output_handler_get_steps	4	static

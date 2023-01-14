@@ -1,0 +1,11 @@
+../Core/Src/filters/filter_highpass.c:20:6:filter_hp_RC_init	16	static
+../Core/Src/filters/filter_highpass.c:31:6:filter_hp_update	8	static
+../Core/Src/filters/filter_highpass.c:38:6:filter_hp_RC_deinit	8	static
+../Core/Src/filters/filter_highpass.c:42:10:filter_hp_RC_get_next	32	static
+../Core/Src/filters/filter_highpass.c:57:6:filter_hp_RC_set_R	16	static
+../Core/Src/filters/filter_highpass.c:61:6:filter_hp_RC_set_C	16	static
+../Core/Src/filters/filter_highpass.c:65:6:filter_hp_set_alpha	24	static
+../Core/Src/filters/filter_highpass.c:70:10:filter_hp_RC_get_fc	4	static
+../Core/Src/filters/filter_highpass.c:74:10:filter_hp_compute_fc	24	static
+../Core/Src/filters/filter_highpass.c:78:7:filter_hp_compute_R	24	static
+../Core/Src/filters/filter_highpass.c:82:7:filter_hp_compute_C	24	static

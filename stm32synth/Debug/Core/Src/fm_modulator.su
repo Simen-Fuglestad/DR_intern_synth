@@ -1,0 +1,2 @@
+../Core/Src/fm_modulator.c:12:6:fm_modulator_init	32	static
+../Core/Src/fm_modulator.c:24:10:fm_modulator_update	16	static
