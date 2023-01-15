@@ -1,9 +1,0 @@
-../Core/Src/MIDI_application.c:61:6:MIDI_Application	8	static
-../Core/Src/MIDI_application.c:86:6:USBH_MIDI_ReceiveCallback	24	static
-../Core/Src/MIDI_application.c:95:10:MIDI_get_input_keys	4	static
-../Core/Src/MIDI_application.c:99:6:MIDI_update_input	32	static
-../Core/Src/MIDI_application.c:111:7:MIDI_key2f	24	static
-../Core/Src/MIDI_application.c:117:9:MIDI_get_n_voices	4	static
-../Core/Src/MIDI_application.c:121:8:MIDI_get_envelopes	4	static
-../Core/Src/MIDI_application.c:125:6:MIDI_note_disable	16	static
-../Core/Src/MIDI_application.c:129:6:ProcessReceivedMidiData	32	static

@@ -1,5 +1,0 @@
-../Core/Src/filters/filter_resonance.c:27:6:filter_res_init	4	static
-../Core/Src/filters/filter_resonance.c:33:6:shift	32	static
-../Core/Src/filters/filter_resonance.c:40:10:filter_res_update	24	static
-../Core/Src/filters/filter_resonance.c:51:7:filter_res_get_next	32	static
-../Core/Src/filters/filter_resonance.c:66:6:filter_res_coeff_update	16	static

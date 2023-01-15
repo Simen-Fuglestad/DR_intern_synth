@@ -1,7 +1,0 @@
-../Core/Src/wavetable.c:23:6:wavetable_init_all	8	static
-../Core/Src/wavetable.c:31:11:wavetable_get_ptr	16	static
-../Core/Src/wavetable.c:48:6:wavetable_create_sine	48	static
-../Core/Src/wavetable.c:60:6:wavetable_create_square	40	static
-../Core/Src/wavetable.c:71:6:wavetable_create_triangle	56	static
-../Core/Src/wavetable.c:81:6:wavetable_create_sawtooth	48	static
-../Core/Src/wavetable.c:90:6:wavetable_create_bowsaw	160	dynamic

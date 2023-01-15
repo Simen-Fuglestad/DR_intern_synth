@@ -1,5 +1,0 @@
-../Core/Src/DSP_utils.c:11:6:dsp_utils_set_lp	80	dynamic
-../Core/Src/DSP_utils.c:20:6:dsp_utils_idft_odd	64	static
-../Core/Src/DSP_utils.c:32:6:dsp_utils_window_sampling_lp	40	static
-../Core/Src/DSP_utils.c:44:6:dps_utils_window_sampling_hp	24	static
-../Core/Src/DSP_utils.c:48:6:dsp_utils_apply_filter	40	static

@@ -1,2 +1,0 @@
-../Core/Src/note_frequency.c:10:6:nf_map_init_440	64	static
-../Core/Src/note_frequency.c:30:7:nf_get_f440hz	16	static
