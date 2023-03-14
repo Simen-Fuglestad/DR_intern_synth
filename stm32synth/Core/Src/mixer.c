@@ -182,7 +182,7 @@ uint16_t mixer_get_OSC2_FM() {
 		return 0;
 }
 
-uint16_t mixer_get_pm_beta() {
+uint16_t mixer_get_pm_beta1() {
 	if (mixer_tmp[PM1_BETA_CHANNEL] >= MIXER_SOFT_CAP)
 		return mixer_tmp[PM1_BETA_CHANNEL] - MIXER_SOFT_CAP;
 	else

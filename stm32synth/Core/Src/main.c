@@ -43,9 +43,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define REF_V_ANALOG 2.90
-#define N_SAMPLES 255
-#define ADC1_N_CHANNELS 3 //active channels on adc 1
+#define REF_V_ANALOG 			2.90
+#define N_SAMPLES 				255
+#define USB_ENDPOINT_DESC_SIZE	0x09U //ignore warning, needed for MIDI compatibility
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -54,7 +54,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
- ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
 I2C_HandleTypeDef hi2c1;
@@ -77,7 +77,7 @@ uint16_t i2s_out[I2S_OUT_N];
 bool i2s_tx_cplt = false;
 bool i2s_tx_half = false;
 
-note_t nf_map_440hz[N_OCTAVES * N_SEMITONES];
+//note_t nf_map_440hz[N_OCTAVES * N_SEMITONES];
 
 uint16_t debounce_cnt = 0;
 uint16_t debounce_limit = 0x1FF;
@@ -133,8 +133,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C1_Init();
   MX_DMA_Init();
+  MX_I2C1_Init();
   MX_USB_HOST_Init();
   MX_ADC1_Init();
   MX_I2S3_Init();
@@ -146,8 +146,6 @@ int main(void)
 	CS43_Enable_RightLeft(CS43_RIGHT_LEFT);
 	CS43_SetVolume(1);
 	CS43_Start();
-
-	nf_map_init_440(nf_map_440hz);
 
 	wavetable_init_all();
 
@@ -164,7 +162,7 @@ int main(void)
 
 	filter_res_init();
 
-	output_handler_init(MIDI_get_n_voices());
+	output_handler_init();
 
 	ws_enum wave_shape;
 
@@ -210,10 +208,6 @@ int main(void)
 			}
 			i2s_tx_half = false;
 		}
-//		MIDI_Application();
-//		MX_USB_HOST_Process();
-
-//		env_process_update();
 
 		if (i2s_tx_cplt) {
 			wave_shape = mixer_get_waveshape_out();

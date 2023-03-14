@@ -24,7 +24,7 @@
 #define N_WT_SAMPLES 5384 	//44.05Khz stereo
 
 #include <stdint.h>
-#include "note_frequency.h"
+//#include "note_frequency.h"
 
 typedef enum {
 	SINE, SQUARE, TRIANGLE, SAWTOOTH, BOWSAW
@@ -34,10 +34,6 @@ typedef enum {
 	AM, FM, PM
 } wave_out_mode_enum;
 
-typedef struct {
-	uint16_t* wave_data;
-	note_t note;
-} wavetable_tone_t;
 
 void wavetable_init_all();
 uint16_t* wavetable_get_ptr(ws_enum wave);

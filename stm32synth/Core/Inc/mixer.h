@@ -57,8 +57,8 @@ uint16_t mixer_get_PWM(void);
 uint16_t mixer_get_OSC1_FM(void);
 uint16_t mixer_get_df(void);
 uint16_t mixer_get_OSC2_FM(void);
+uint16_t mixer_get_pm_beta1(void);
 uint16_t mixer_get_pm_beta2(void);
-uint16_t mixer_get_pm_beta(void);
 uint16_t mixer_get_pmf(void);
 bool mixer_get_sync();
 
