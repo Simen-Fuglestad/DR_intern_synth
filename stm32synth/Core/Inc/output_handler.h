@@ -12,7 +12,7 @@
 
 void output_handler_init();
 
-void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t out_len, uint16_t* wavetable);
+void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t out_len, float* wavetable);
 
 float* output_handler_get_steps();
 

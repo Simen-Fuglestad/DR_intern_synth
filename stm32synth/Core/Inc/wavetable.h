@@ -34,25 +34,26 @@ typedef enum {
 	AM, FM, PM
 } wave_out_mode_enum;
 
+void wavetable_test_sine_scale(float* fsin, uint16_t* out, uint16_t ns, uint16_t ref);
 
 void wavetable_init_all();
-uint16_t* wavetable_get_ptr(ws_enum wave);
+float* wavetable_get_ptr(ws_enum wave);
 
 //Wave gen functions, create a single period T of ns samples
 
 void wavetable_create_sine(
-		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
+		float* out, uint16_t ns, float amp);
 
 void wavetable_create_square(
-		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
+		float* out, uint16_t ns, float amp);
 
 void wavetable_create_triangle(
-		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
+		float* out, uint16_t ns, float amp);
 
 void wavetable_create_sawtooth(
-		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
+		float* out, uint16_t ns, float amp);
 
 void wavetable_create_bowsaw(
-		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp, uint16_t split_i);
+		float* out, uint16_t ns, float amp, uint16_t split_i);
 
 #endif /* INC_WAVETABLE_H_ */

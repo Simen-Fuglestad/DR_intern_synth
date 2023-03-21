@@ -12,7 +12,7 @@
 
 #define MODULATOR_MAX_VOICES 4 //Nr of "voices", aka simultaneous notes that can be played. More voices imply higher performance requirements
 
-float modulator_get_next_fm(float mod_step, uint16_t *mod_table, float k);
+float modulator_get_next_fm(float mod_step, float *mod_table, float k);
 float modulator_updatef(float mod, float upd, float ref);
 
 uint16_t modu16(uint16_t modulator, uint16_t carrier);
@@ -33,7 +33,7 @@ float modulator_get_fm(int fnm);
 float modulator_update_ipmf();
 void modulator_update_beta();
 
-float modulator_get_next_pm(float mod, uint16_t *mod_table, uint16_t ind, int pmn);
+float modulator_get_next_pm(float mod, float *mod_table, uint16_t ind, int pmn);
 float modulator_get_beta(int beta_n);
 float modulator_pmf_update();
 float modulator_get_beta1_ds();

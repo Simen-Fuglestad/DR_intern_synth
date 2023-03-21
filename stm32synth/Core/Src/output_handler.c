@@ -28,14 +28,14 @@ void output_handler_init() {
 	}
 }
 
-void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t out_stop, uint16_t* wavetable) {
+void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t out_stop, float* wavetable) {
 	/*
 	 * Combine modulation signals to single output
-	 * Note that we are skipping 4 entries in buffer for performance, which makes the frequency of wavetable note
-	 * is divided by 4. Since N_WT_SAMPLES = 5384 and sampling f = 44Khz then base tone is 16.352/4 = 4.088Hz
+	 * Note that we are skipping 4 entries in buffer for performance, so the frequency of "slowest" tone
+	 * is divided by 4. Since N_WT_SAMPLES = 5384 and sampling at f = 44Khz in stereo, then base tone is 16.352/4 = 4.088Hz
 	 */
-#define REF_CENTER 2048
-	static uint32_t out_val;
+
+	static float out_val;
 
 	modulator_update_df();
 	modulator_update_fm();
@@ -46,9 +46,9 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 	modulator_compute_k(1);
 	modulator_compute_k(2);
 
-	uint16_t* mod_wt1 = wavetable_get_ptr(mixer_get_OSC_ws(1));
-	uint16_t* mod_wt2 = wavetable_get_ptr(mixer_get_OSC_ws(2));
-	uint16_t* mod_wt3 = wavetable_get_ptr(mixer_get_OSC_ws(3));
+	float* mod_wt1 = wavetable_get_ptr(mixer_get_OSC_ws(1));
+	float* mod_wt2 = wavetable_get_ptr(mixer_get_OSC_ws(2));
+	float* mod_wt3 = wavetable_get_ptr(mixer_get_OSC_ws(3));
 
 	float mf1;
 	float mf2;
@@ -60,7 +60,7 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 
 	for (uint16_t i = out_start; i < out_stop - 3; i+=4) {
 		uint8_t active_voices = 0;
-		uint32_t out_sample = 0;
+		float out_sample = 0;
 
 		modulator_update_fm_osc(1);
 		modulator_update_fm_osc(2);
@@ -78,20 +78,18 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 			mp2 = modulator_get_next_pm(steps[j], mod_wt3, j, 2);
 
 			idx = ((int)(trackers[j] + mp1 + mp2 + mf1 + mf2)) % N_WT_SAMPLES;
-
+//			idx = ((int)(trackers[j])) % N_WT_SAMPLES;
 			if (idx < 0) {
 				idx += N_WT_SAMPLES;
 			}
 
-			if (trackers[j] > N_WT_SAMPLES*((float)mixer_get_PWM()/MIXER_DREF)) {
+			float pwm = N_WT_SAMPLES*((float)mixer_get_PWM()/MIXER_DREF);
+
+			if (trackers[j] > pwm) {
 				env_process(j);
 				float scaler = env_map_get(j)->scaler;
 
-				uint16_t next_sample = (float)wavetable[idx];
-				if (next_sample > 0xFFF) {
-					next_sample -= 0xFFF;
-				}
-				out_sample += next_sample * scaler;
+				out_sample += wavetable[idx] * scaler;
 			}
 
 			trackers[j] += steps[j];
@@ -107,8 +105,11 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 			//out_sample = apply_effects(out_sample);
 			// out_sample = apply_filters(out_sample);
 
-			out_val = (out_sample)/squares[active_voices - 1];
-			out_val = apply_filters(out_val);
+//			out_val = (out_sample)/squares[active_voices - 1];
+			out_val = out_sample/active_voices;
+			out_val = out_val * 2048 + 2048;
+
+			//out_val = apply_filters(out_val);
 
 		}
 		float vol = (float)mixer_get_volume()/MIXER_DREF;

@@ -36,10 +36,9 @@ static const float BETA2_DS = MIXER_DREF / 10;				// Depth scaling beta2
 static float pm1_mods[MODULATOR_MAX_VOICES];
 static float pm2_mods[MODULATOR_MAX_VOICES];
 			
-float modulator_get_next_fm(float mod_step, uint16_t *mod_table, float k) {
-	uint16_t m = mod_table[(uint16_t)mod_step];
-	float f = (mod_table[m] - REF_CENTER) * k;
-	return f;	
+float modulator_get_next_fm(float mod_step, float *mod_table, float k) {
+	float m = mod_table[(uint16_t)mod_step];
+	return m * N_WT_SAMPLES;
 }
 
 float modulator_update_fm_osc(int osc_n) {
@@ -97,7 +96,7 @@ float modulator_compute_k(int kn) {
 			break;
 	}
 	if (*fmx > FM_BOUND) {
-		*k = (df * FS) / (*fmx * 2 * M_PI * REF_CENTER);
+		*k = (df * FS) / (*fmx * 2 * M_PI);
 	}
 	else {
 		*k = 0;
@@ -151,7 +150,7 @@ float modulator_get_fm(int fmn) {
 	}
 }
 
-float modulator_get_next_pm(float mod, uint16_t *wt, uint16_t ind, int pmn) {
+float modulator_get_next_pm(float mod, float *wt, uint16_t ind, int pmn) {
 	float *pm_mods;
 	float *beta;
 	switch(pmn) {
@@ -176,9 +175,9 @@ float modulator_get_next_pm(float mod, uint16_t *wt, uint16_t ind, int pmn) {
 	if (pm_mods[ind] >= N_WT_SAMPLES) {
 		pm_mods[ind] -= N_WT_SAMPLES;
 	}
-	uint16_t m = wt[(uint16_t)pm_mods[ind]];
-	float next = (m - REF_CENTER) * (*beta);
-	return next;
+	float m = wt[(uint16_t)pm_mods[ind]];
+	float next = m * (*beta);
+	return next * N_WT_SAMPLES;
 }
 
 
