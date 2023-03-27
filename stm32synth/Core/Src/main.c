@@ -72,7 +72,7 @@ uint16_t output_wave[N_WT_SAMPLES];
 
 #define I2S_OUT_N N_WT_SAMPLES
 #define I2S_OUT_N_HALF I2S_OUT_N/2
-uint16_t i2s_out[I2S_OUT_N];
+uint16_t i2s_out[N_WT_SAMPLES];
 
 bool i2s_tx_cplt = false;
 bool i2s_tx_half = false;
@@ -182,12 +182,6 @@ int main(void)
     MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
-		filter_update(); //NOTE: Filter needs to update BEFORE mixer
-		mixer_update();
-
-		MIDI_update_input(output_handler_get_steps());
-		env_update_ADSR();
-
 		if (i2s_tx_half) {
 			wave_shape = mixer_get_waveshape_out();
 
@@ -203,13 +197,10 @@ int main(void)
 			else if (wave_shape == SAWTOOTH) {
 				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, wavetable_get_ptr(SAWTOOTH));
 			}
-			else if (wave_shape == BOWSAW) {
-				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, wavetable_get_ptr(BOWSAW));
-			}
 			i2s_tx_half = false;
 		}
 
-		if (i2s_tx_cplt) {
+		else if (i2s_tx_cplt) {
 			wave_shape = mixer_get_waveshape_out();
 
 			if (wave_shape == SINE) {
@@ -224,10 +215,13 @@ int main(void)
 			else if (wave_shape == SAWTOOTH) {
 				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, wavetable_get_ptr(SAWTOOTH));
 			}
-			else if (wave_shape == BOWSAW) {
-				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, wavetable_get_ptr(BOWSAW));
-			}
 			i2s_tx_cplt = false;
+		} else {
+			filter_update(); //NOTE: Filter needs to update BEFORE mixer
+			mixer_update();
+
+			MIDI_update_input(output_handler_get_steps());
+			env_update_ADSR();
 		}
 	}
   /* USER CODE END 3 */

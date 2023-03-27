@@ -10,9 +10,9 @@
 
 #include <stdint.h>
 
-#define MODULATOR_MAX_VOICES 4 //Nr of "voices", aka simultaneous notes that can be played. More voices imply higher performance requirements
+#define MODULATOR_MAX_VOICES 5 //Nr of "voices", aka simultaneous notes that can be played. More voices imply higher performance requirements
 
-float modulator_get_next_fm(float mod_step, float *mod_table, float k);
+float modulator_get_next(float mod_step, float *mod_table);
 float modulator_updatef(float mod, float upd, float ref);
 
 uint16_t modu16(uint16_t modulator, uint16_t carrier);

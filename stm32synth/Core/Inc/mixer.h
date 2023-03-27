@@ -67,7 +67,7 @@ void mixer_PM_mult_cycle();
 
 ws_enum mixer_get_OSC_ws(uint8_t n);
 ws_enum mixer_get_waveshape_out(void);
-wave_out_mode_enum mixer_get_wave_out_mode(void);
+//wave_out_mode_enum mixer_get_wave_out_mode(void);
 
 OSC_mode_enum mixer_get_OSC1_mode(void);
 OSC_mode_enum mixer_get_OSC2_mode(void);

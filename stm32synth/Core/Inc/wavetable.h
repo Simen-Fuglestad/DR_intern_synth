@@ -27,20 +27,13 @@
 //#include "note_frequency.h"
 
 typedef enum {
-	SINE, SQUARE, TRIANGLE, SAWTOOTH, BOWSAW
+	SINE, SQUARE, TRIANGLE, SAWTOOTH
 } ws_enum;
-
-typedef enum {
-	AM, FM, PM
-} wave_out_mode_enum;
-
-void wavetable_test_sine_scale(float* fsin, uint16_t* out, uint16_t ns, uint16_t ref);
 
 void wavetable_init_all();
 float* wavetable_get_ptr(ws_enum wave);
 
 //Wave gen functions, create a single period T of ns samples
-
 void wavetable_create_sine(
 		float* out, uint16_t ns, float amp);
 

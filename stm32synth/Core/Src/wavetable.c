@@ -19,21 +19,11 @@ static float square[N_WT_SAMPLES];
 static float triangle[N_WT_SAMPLES];
 static float sawtooth[N_WT_SAMPLES];
 
-
-void wavetable_test_sine_scale(float* fsin, uint16_t* out, uint16_t ns, uint16_t ref) {
-	for (int i = 0; i < ns; i++) {
-		float scaled = fsin[i] * (ref/2);
-		uint16_t s = (uint16_t)(scaled + ref/2);
-		out[i] = (ref/2) * fsin[i] + (ref/2);
-	}
-}
-
 void wavetable_init_all() {
 	wavetable_create_sine(sine, N_WT_SAMPLES, 1);
 	wavetable_create_square(square, N_WT_SAMPLES, 1);
 	wavetable_create_triangle(triangle, N_WT_SAMPLES, 1);
 	wavetable_create_sawtooth(sawtooth, N_WT_SAMPLES, 1);
-//	wavetable_create_bowsaw(bowsaw, N_WT_SAMPLES, 1, 1000);
 }
 
 float* wavetable_get_ptr(ws_enum wave) {
@@ -45,8 +35,6 @@ float* wavetable_get_ptr(ws_enum wave) {
 	case TRIANGLE:
 		return triangle;
 	case SAWTOOTH:
-		return sawtooth;
-	case BOWSAW:
 		return sawtooth;
 	default:
 		break;

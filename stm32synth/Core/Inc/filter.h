@@ -17,8 +17,8 @@
 static const float DELTA_T_DEFAULT = 1.0f/(48000);
 
 typedef struct {
-	uint16_t prev_y;
-	uint16_t fc;
+	float prev_y;
+	float fc;
 	float delta_t;
 	float R;
 	float C;
@@ -50,14 +50,14 @@ void filter_lp_update(void);
 
 void filter_lp_RC_set_R(float R);
 void filter_lp_RC_set_C(float C);
-void filter_lp_set_alpha(uint16_t fc);
+void filter_lp_set_alpha(float fc);
 void filter_lp_set_active(bool b);
 
-uint16_t filter_lp_RC_get_next(uint16_t x);
-uint16_t filter_lp_RC_get_fc(void);
+float filter_lp_RC_get_next(float x);
+float filter_lp_RC_get_fc(void);
 bool filter_lp_get_active(void);
 
-uint16_t filter_lp_compute_fc(float R, float C);
+float filter_lp_compute_fc(float R, float C);
 float filter_lp_compute_R(float fc, float C);
 float filter_lp_compute_C(float fc, float R);
 
@@ -80,7 +80,7 @@ bool filter_hp_RC_get_active(void);
 //resonant
 
 void filter_res_init();
-uint16_t filter_res_update(uint32_t in);
+float filter_res_update(float in);
 void filter_res_coeff_update();
 float filter_res_get_next();
 #endif /* INC_FILTER_H_ */

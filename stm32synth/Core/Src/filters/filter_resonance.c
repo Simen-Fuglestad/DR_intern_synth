@@ -1,12 +1,15 @@
 #include "filter.h"
 #include <math.h>
 #include "OSC.h"
+#include "modulator.h"
 
 static float fc;
 static uint16_t fs;
 
 static float Ts;
 static float r;
+
+static float LFO_tracker;
 
 static float a1;
 static float a2;
@@ -25,9 +28,10 @@ static float x_buff[X_LEN];
 void shift(float inp, float* buff, uint16_t buff_len);
 
 void filter_res_init() {
-    fs = 44100;
+    fs = 44100/4; //output updates every 4 samples
     Ts = 1.0f/fs;
-    fc = 2047; //needed to init LFO
+    fc = 10000; //needed to init LFO
+    r = 0.9;
 }
 
 void shift(float inp, float* buff, uint16_t buff_len) {
@@ -37,15 +41,30 @@ void shift(float inp, float* buff, uint16_t buff_len) {
     buff[0] = inp;
 }
 
-uint16_t filter_res_update(uint32_t in) {
-    static float fin;
-    fin = ((float)in - 2048)/2048;
-    shift(fin, x_buff, X_LEN);
+float filter_res_update(float in) {
+    uint16_t mixer_fc = mixer_get_filter_fc_low();
+    uint16_t sweep = mixer_get_filter_fc_high()/0xF;
+
+    float sweepf = modulator_get_next(sweep, wavetable_get_ptr(SINE))/0x1FF;
+    float* wt = wavetable_get_ptr(SINE);
+    LFO_tracker += sweepf;
+    if (LFO_tracker >= N_WT_SAMPLES) {
+    	LFO_tracker -= N_WT_SAMPLES;
+    }
+    fc = mixer_fc * wt[(uint16_t)LFO_tracker];
+//    float next
+//    float* wt = wavetable_get_ptr(SINE);
+
+//    float osc = wt[(uint16_t)LF_TRACKER];
+//    fc = fcf * sweepf;
+
+//    fc = modulator_get_next(fabs(fc) * sweepf, wavetable_get_ptr(SINE));
+    //fc = OSC_apply(sweep, mixer_fc, LFO_TREMOLO);
+    shift(in, x_buff, X_LEN);
     float next = filter_res_get_next();
     shift(next, y_buff, Y_LEN);
 
-    uint16_t out = next * 2048 + 2048;
-    return out;
+    return next;
 }
 
 float filter_res_get_next() {
@@ -57,39 +76,19 @@ float filter_res_get_next() {
 
     float y2 = a2 * y_buff[1];
 
-    static volatile float out;
+    static float out;
     out = x0 + x1 + x2 - y1 - y2;
 
     return out;
 }
 
 void filter_res_coeff_update() {
-    static float r_scaler;
-    static float r_mix;
 
-    static float r_index[11] = {
-        0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1
-    };
-
-    // uint16_t mixer_fc = mixer_get_filter_fc_low();
-
-    // fc = OSC_apply(mixer_fc, 1000, LFO_TREMOLO);
-    fc = OSC_res_update();
-
-    // fc = 440;
-    r_mix = (float)mixer_get_filter_fc_high()/0xFFF;
-
-    r_scaler = roundf(r_mix/0.1);
-
-    r = r_index[(int)r_scaler];
-    if (r > 1) r = 1;
-
-    r = 0.99;
-
-    a1 = -2.0f * r * cosf(2.0f * 3.1415 * fc/44100);
+    float tmp_fc_ts = fc*Ts;
+    a1 = -2.0f * r * cosf(2.0f * 3.141f * fc * Ts);
     a2 = r*r;
 
-    b0 = (1 - r*r)/2;
+    b0 = (1.0f - r*r)/2.0f;
     // b0 = 1;
     b1 = 0;
     b2 = -b0;

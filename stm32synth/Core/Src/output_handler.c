@@ -20,11 +20,12 @@ static float trackers[MODULATOR_MAX_VOICES];
 static float steps[MODULATOR_MAX_VOICES];
 
 uint32_t apply_effects(uint32_t sample);
-uint32_t apply_filters(uint32_t sample);
+float apply_filters(float sample);
 
 void output_handler_init() {
-	for (uint8_t i = 0; i < MODULATOR_MAX_VOICES; i++) {
-		squares[i] = sqrt(i + 1);
+	squares[0] = sqrt(2);
+	for (uint8_t i = 1; i < MODULATOR_MAX_VOICES; i++) {
+		squares[i] = squares[i-1] * sqrt(2);
 	}
 }
 
@@ -70,12 +71,12 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 				trackers[j] = 0;
 				continue;
 			}
-			mf1 = modulator_get_next_fm(modulator_get_fm_osc(1), mod_wt1, modulator_get_k(1));
+			mf1 = modulator_get_next(modulator_get_fm_osc(1), mod_wt1);
 
-			mf2 = modulator_get_next_fm(modulator_get_fm_osc(2), mod_wt2, modulator_get_k(2));
+			mf2 = modulator_get_next(modulator_get_fm_osc(2), mod_wt2);
 
-			mp1 = modulator_get_next_pm(steps[j], mod_wt2, j, 1);
-			mp2 = modulator_get_next_pm(steps[j], mod_wt3, j, 2);
+			mp1 = modulator_get_next_pm(steps[j], mod_wt2, j, 1) * env_map_get(j)->scaler;;
+			mp2 = modulator_get_next_pm(steps[j], mod_wt3, j, 2) * env_map_get(j)->scaler;;
 
 			idx = ((int)(trackers[j] + mp1 + mp2 + mf1 + mf2)) % N_WT_SAMPLES;
 //			idx = ((int)(trackers[j])) % N_WT_SAMPLES;
@@ -102,12 +103,13 @@ void output_handler_outwave_update(uint16_t* out, uint16_t out_start, uint16_t o
 		}
 
 		if (active_voices) {
-			//out_sample = apply_effects(out_sample);
-			// out_sample = apply_filters(out_sample);
+//			out_sample = apply_effects(out_sample);
+//			out_sample = apply_filters(out_sample);
 
-//			out_val = (out_sample)/squares[active_voices - 1];
-			out_val = out_sample/active_voices;
-			out_val = out_val * 2048 + 2048;
+			out_val = (out_sample)/squares[active_voices - 1];
+			out_val = apply_filters(out_val);
+//			out_val = out_sample/active_voices;
+			out_val = out_val * 2047 + 2048;
 
 			//out_val = apply_filters(out_val);
 
@@ -133,9 +135,9 @@ uint32_t apply_effects(uint32_t sample_in) {
 	return sample_in;
 }
 
-uint32_t apply_filters(uint32_t sample) {
-	//sample = filter_res_update(sample);
-	sample = filter_lp_RC_get_next(sample);
+float apply_filters(float sample) {
+	sample = filter_res_update(sample);
+//	sample = filter_lp_RC_get_next(sample);
 
 	return sample;
 }

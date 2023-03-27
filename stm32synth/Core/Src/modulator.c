@@ -36,7 +36,7 @@ static const float BETA2_DS = MIXER_DREF / 10;				// Depth scaling beta2
 static float pm1_mods[MODULATOR_MAX_VOICES];
 static float pm2_mods[MODULATOR_MAX_VOICES];
 			
-float modulator_get_next_fm(float mod_step, float *mod_table, float k) {
+float modulator_get_next(float mod_step, float *mod_table) {
 	float m = mod_table[(uint16_t)mod_step];
 	return m * N_WT_SAMPLES;
 }

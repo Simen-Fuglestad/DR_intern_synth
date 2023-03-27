@@ -20,16 +20,15 @@ static bool vib_rising				= true;
 
 //static const
 
-uint32_t OSC_apply(uint16_t mixer_in, float sample_in, OSC_mode_enum mode) {
-	uint16_t* wt = wavetable_get_ptr(mixer_get_OSC_ws(1));
-	uint16_t osc_val = wt[(uint16_t)OSC_tracker];
-	float osc_scaled = (float)osc_val/OSC_ref;
+float OSC_apply(uint16_t speed, float sample_in, OSC_mode_enum mode) {
+	float* wt = wavetable_get_ptr(mixer_get_OSC_ws(1));
+	float osc_val = wt[(uint16_t)OSC_tracker];
 
-	static float out_val;
+	float out_val = 0;
 
 
 	if(mode == LFO_TREMOLO) {
-		out_val = sample_in * osc_scaled;
+		out_val = sample_in * osc_val;
 
 	} else if (mode == LFO_PITCH) {
 		out_val = (out_val + osc_val)/2;
@@ -38,13 +37,13 @@ uint32_t OSC_apply(uint16_t mixer_in, float sample_in, OSC_mode_enum mode) {
 	} else if (mode == LFO_FLUTTER) {
 		//fun
 		if (vib_rising) {
-			vib_tracker+=(osc_scaled);
+			vib_tracker+=(osc_val);
 			if (vib_tracker >= VIB_LIM_HIGH) {
 				vib_tracker = VIB_LIM_HIGH;
 				vib_rising = false;
 			}
 		} else {
-			vib_tracker-=(osc_scaled);
+			vib_tracker-=(osc_val);
 			if (vib_tracker <= VIB_LIM_LOW) {
 				vib_tracker = VIB_LIM_LOW;
 				vib_rising = true;
@@ -55,12 +54,12 @@ uint32_t OSC_apply(uint16_t mixer_in, float sample_in, OSC_mode_enum mode) {
 	else {
 		return out_val;
 	}
-	OSC_tracker+= OSC_LIM_STEP_SZ * (float)mixer_in/OSC_ref;
+	OSC_tracker+= OSC_LIM_STEP_SZ * (float)speed/OSC_ref;
 	if (OSC_tracker > N_WT_SAMPLES) {
 		OSC_tracker -= N_WT_SAMPLES;
 	}
 
-	if (out_val <= 0) out_val = 1;
+//	if (out_val <= 0) out_val = 1;
 	return out_val;
 }
 

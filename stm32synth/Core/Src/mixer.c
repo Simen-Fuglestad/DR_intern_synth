@@ -18,7 +18,6 @@ static uint32_t mixer_avg[MIXER_ADC1_CHANNELS];
 static ADC_HandleTypeDef* adc_ptr;
 
 static ws_enum waveshape_out;
-static wave_out_mode_enum wave_out_mode;
 
 static bool mixer_adc_update_flag;
 static bool mixer_btn_pressed_flag;
@@ -222,10 +221,6 @@ ws_enum mixer_get_waveshape_out() {
 	return waveshape_out;
 }
 
-wave_out_mode_enum mixer_get_wave_out_mode() {
-	return wave_out_mode;
-}
-
 OSC_mode_enum mixer_get_OSC1_mode() {
 	return mixer_OSC1_mode;
 }
@@ -257,27 +252,8 @@ void mixer_cycle_wave(ws_enum* w_shape_ptr) {
 	case TRIANGLE:
 		*w_shape_ptr = SAWTOOTH;
 		break;
-	case SAWTOOTH:
-		*w_shape_ptr = BOWSAW;
-		break;
 	default:
 		*w_shape_ptr = SINE;
-		break;
-	}
-}
-
-void mixer_cycle_mode() {
-	switch(wave_out_mode) {
-	case AM:
-		wave_out_mode = FM;
-		break;
-	case FM:
-		wave_out_mode = AM;
-		break;
-	case PM:
-		wave_out_mode = PM;
-		break;
-	default:
 		break;
 	}
 }
