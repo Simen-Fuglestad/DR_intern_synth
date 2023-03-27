@@ -34,18 +34,18 @@ void filter_lp_RC_deinit() {
 	memset(&lp_filter, 0, sizeof(lp_filter));
 }
 
-uint16_t filter_lp_RC_get_next(uint16_t x) {
-	uint16_t y = lp_filter.alpha * x + (1 - lp_filter.alpha) * lp_filter.prev_y;
+float filter_lp_RC_get_next(float x) {
+	float y = lp_filter.alpha * x + (1.0f - lp_filter.alpha) * lp_filter.prev_y;
 	lp_filter.prev_y = y * lp_filter.gain;
 
 	return y;
 }
 
-uint16_t filter_lp_RC_get_fc() {
+float filter_lp_RC_get_fc() {
 	return lp_filter.fc;
 }
 
-void filter_lowpass_RC_set_fc(uint16_t fc) {
+void filter_lowpass_RC_set_fc(float fc) {
 	lp_filter.fc = fc;
 	filter_lp_set_alpha(fc);
 }
@@ -58,7 +58,7 @@ void filter_lp_RC_set_C(float C) {
 	lp_filter.C = C;
 }
 
-void filter_lp_set_alpha(uint16_t fc) {
+void filter_lp_set_alpha(float fc) {
 
 	lp_filter.alpha = 2 * M_PI * fc * lp_filter.delta_t/(2* M_PI * fc * lp_filter.delta_t + 1);
 }
@@ -71,7 +71,7 @@ bool filter_lp_get_active() {
 	return lp_active;
 }
 
-uint16_t filter_lp_compute_fc(float R, float C) {
+float filter_lp_compute_fc(float R, float C) {
 	return 1.0f/(2 * M_PI * R * C);
 }
 

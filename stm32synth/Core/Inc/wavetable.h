@@ -24,39 +24,29 @@
 #define N_WT_SAMPLES 5384 	//44.05Khz stereo
 
 #include <stdint.h>
-#include "note_frequency.h"
+//#include "note_frequency.h"
 
 typedef enum {
-	SINE, SQUARE, TRIANGLE, SAWTOOTH, BOWSAW
+	SINE, SQUARE, TRIANGLE, SAWTOOTH
 } ws_enum;
 
-typedef enum {
-	AM, FM, PM
-} wave_out_mode_enum;
-
-typedef struct {
-	uint16_t* wave_data;
-	note_t note;
-} wavetable_tone_t;
-
 void wavetable_init_all();
-uint16_t* wavetable_get_ptr(ws_enum wave);
+float* wavetable_get_ptr(ws_enum wave);
 
 //Wave gen functions, create a single period T of ns samples
-
 void wavetable_create_sine(
-		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
+		float* out, uint16_t ns, float amp);
 
 void wavetable_create_square(
-		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
+		float* out, uint16_t ns, float amp);
 
 void wavetable_create_triangle(
-		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
+		float* out, uint16_t ns, float amp);
 
 void wavetable_create_sawtooth(
-		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp);
+		float* out, uint16_t ns, float amp);
 
 void wavetable_create_bowsaw(
-		uint16_t* out, uint16_t ref_v, uint16_t ns, float amp, uint16_t split_i);
+		float* out, uint16_t ns, float amp, uint16_t split_i);
 
 #endif /* INC_WAVETABLE_H_ */

@@ -16,12 +16,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define N_OCTAVES 			9// +1 accounts for 0th octave
-#define N_SEMITONES 		12
-#define ST_STEP_UP 		1.059463 //octaves are divided into 12 semitones, 2^(1/12)
+#define N_OCTAVES 		9			// +1 accounts for 0th octave
+#define N_SEMITONES 	12
+#define ST_STEP_UP 		1.059463 	//octaves are divided into 12 semitones, 2^(1/12)
 #define ST_STEP_DOWN	0.943874
 #define ST_DIFF			ST_STEP_UP - ST_STEP_DOWN
-#define NOTE_C0_440HZ		16.352 // use as basis for building 440hz lookup table
+#define NOTE_C0_440HZ	16.352 		// use as basis for building 440hz lookup table
 
 #define FREQ_BASE 			8.176// c0 divided by 4
 

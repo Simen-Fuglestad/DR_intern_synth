@@ -51,6 +51,9 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
+void   MX_I2C1_Init(void);
+void   MX_ADC1_Init(void);
+void   MX_I2S3_Init(void);
 
 /* USER CODE BEGIN EFP */
 
@@ -150,9 +153,7 @@ void Error_Handler(void);
 #define Audio_SDA_GPIO_Port GPIOB
 #define MEMS_INT2_Pin GPIO_PIN_1
 #define MEMS_INT2_GPIO_Port GPIOE
-void   MX_I2C1_Init(void);
-void   MX_ADC1_Init(void);
-void   MX_I2S3_Init(void);
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
