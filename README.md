@@ -48,7 +48,8 @@ Ok, here we go.
 
 ### Sytem Overview
 Check out this drawing to get a high-level grip:
-![synth_system drawio(1)](https://user-images.githubusercontent.com/95622775/228568798-fb3924aa-8fe6-4e6b-90f2-24542bf78a43.png)
+![synth_system drawio(2)](https://user-images.githubusercontent.com/95622775/228569091-5a169f78-588a-4c29-9010-6e497af796da.png)
+
 
 
 ## Proposed Improvals
