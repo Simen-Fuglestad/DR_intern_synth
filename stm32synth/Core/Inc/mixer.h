@@ -24,20 +24,20 @@
 
 #define MIXER_ADC1_CHANNELS 14 //number of conversions in ADC1
 
-#define FILTER_LOW_CHANNEL	0
-#define FILTER_HIGH_CHANNEL	1
-#define VOLUME_CHANNEL 		2
-#define OSC2_FM_CHANNEL		3
-#define ATTACK_CHANNEL 		4
-#define DECAY_CHANNEL		5
-#define SUSTAIN_CHANNEL		6
-#define RELEASE_CHANNEL		7
-#define OSC_DF_CHANNEL		8
-#define PWM_CHANNEL			9
-#define OSC1_FM_CHANNEL		10
-#define PM1_BETA_CHANNEL	11
-#define PM2_BETA_CHANNEL	12
-#define PMF_CHANNEL			13
+#define FILTER_FC_CHANNEL		0
+#define FILTER_SWEEP_CHANNEL	1
+#define VOLUME_CHANNEL 			2
+#define OSC2_FM_CHANNEL			3
+#define ATTACK_CHANNEL 			4
+#define DECAY_CHANNEL			5
+#define SUSTAIN_CHANNEL			6
+#define RELEASE_CHANNEL			7
+#define OSC_DF_CHANNEL			8
+#define PWM_CHANNEL				9
+#define OSC1_FM_CHANNEL			10
+#define PM1_BETA_CHANNEL		11
+#define PM2_BETA_CHANNEL		12
+#define PMF_CHANNEL				13
 
 void mixer_init(ADC_HandleTypeDef*  adc_handle, TIM_HandleTypeDef* htim);
 
@@ -61,9 +61,6 @@ uint16_t mixer_get_pm_beta1(void);
 uint16_t mixer_get_pm_beta2(void);
 uint16_t mixer_get_pmf(void);
 bool mixer_get_sync();
-
-float mixer_get_PM_mult();
-void mixer_PM_mult_cycle();
 
 ws_enum mixer_get_OSC_ws(uint8_t n);
 ws_enum mixer_get_waveshape_out(void);

@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-#define MODULATOR_MAX_VOICES 5 //Nr of "voices", aka simultaneous notes that can be played. More voices imply higher performance requirements
+#define MODULATOR_MAX_VOICES 4 //Nr of "voices", aka simultaneous notes that can be played. More voices imply higher performance requirements
 
 float modulator_get_next(float mod_step, float *mod_table);
 float modulator_updatef(float mod, float upd, float ref);
@@ -35,7 +35,7 @@ void modulator_update_beta();
 
 float modulator_get_next_pm(float mod, float *mod_table, uint16_t ind, int pmn);
 float modulator_get_beta(int beta_n);
-float modulator_pmf_update();
+void modulator_pmf_update();
 float modulator_get_beta1_ds();
 float modulator_get_beta2_ds();
 

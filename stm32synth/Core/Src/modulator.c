@@ -117,11 +117,10 @@ float modulator_update_beta2() {
 	return beta2;
 }
 
-float modulator_pmf_update() {
+void modulator_pmf_update() {
 	float ipmf = (float)mixer_get_pmf()/MIXER_DREF;
 	float pmf_scaler = roundf(ipmf/TEMPER_RATIO); // scale in steps of 12
 	pmf = powf(NOTE_F_UP, pmf_scaler) + TEMPER_RATIO;
-	return pmf;
 }
 
 float modulator_get_fm_osc(int fm_osc_n) {
@@ -153,6 +152,7 @@ float modulator_get_fm(int fmn) {
 float modulator_get_next_pm(float mod, float *wt, uint16_t ind, int pmn) {
 	float *pm_mods;
 	float *beta;
+
 	switch(pmn) {
 		case 1:
 			pm_mods = pm1_mods;
@@ -168,6 +168,7 @@ float modulator_get_next_pm(float mod, float *wt, uint16_t ind, int pmn) {
 
 	bool pmf_en = mixer_get_sync();
 	if (pmf_en) {
+//		pm_mods[ind] = 0;
 		pm_mods[ind] += mod * pmf;
 	} else {
 		pm_mods[ind] += mod;

@@ -42,12 +42,6 @@ static uint8_t debounce_cnt = 20;
 void mixer_LFO_toggle(void);
 void mixer_LFO2_toggle(void);
 
-#define PM_MULT_LEN 12
-
-static const float MIXER_PM_MULTS[PM_MULT_LEN] = {
-		0.0625f, 0.25f, 0.5f, 0.75f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f
-};
-
 static bool mixer_sync;
 
 static int pm_mult_idx;
@@ -113,8 +107,8 @@ bool mixer_get_updated() {
 
 
 uint16_t mixer_get_filter_fc_low() {
-	if (mixer_DMA[FILTER_LOW_CHANNEL] >= MIXER_SOFT_CAP) {
-		return mixer_DMA[FILTER_LOW_CHANNEL] - MIXER_SOFT_CAP;
+	if (mixer_DMA[FILTER_FC_CHANNEL] >= MIXER_SOFT_CAP) {
+		return mixer_DMA[FILTER_FC_CHANNEL] - MIXER_SOFT_CAP;
 	}
 	else {
 		return 0;
@@ -123,8 +117,8 @@ uint16_t mixer_get_filter_fc_low() {
 
 
 uint16_t mixer_get_filter_fc_high() {
-	if (mixer_tmp[FILTER_HIGH_CHANNEL] >= MIXER_SOFT_CAP) {
-		return mixer_tmp[FILTER_HIGH_CHANNEL] - MIXER_SOFT_CAP;
+	if (mixer_tmp[FILTER_SWEEP_CHANNEL] >= MIXER_SOFT_CAP) {
+		return mixer_tmp[FILTER_SWEEP_CHANNEL] - MIXER_SOFT_CAP;
 	}
 	else {
 		return 0;
@@ -289,14 +283,6 @@ void mixer_filter_toggle() {
 	mixer_filter_en = !mixer_filter_en;
 }
 
-void mixer_PM_mult_cycle() {
-	pm_mult_idx = (pm_mult_idx + 1) % PM_MULT_LEN;
-}
-
-float mixer_get_PM_mult() {
-	return MIXER_PM_MULTS[pm_mult_idx];
-}
-
 bool mixer_get_sync() {
 	return mixer_sync;
 }
@@ -317,22 +303,22 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		btn_rdy = false;
 		switch(GPIO_Pin) {
 
-		case BUTTON_OUT_WAVE_CYCLE_Pin:
+		case BTN_WT_OUT_CYCLE_Pin:
 			mixer_cycle_wave(&waveshape_out);
 			break;
 
-		case BUTTON_OSC1_CYCLE_Pin:
+		case BTN_OSC1_CYCLE_Pin:
 			mixer_cycle_wave(&mixer_OSC1_ws);
 
-		case BUTTON_OSC2_CYCLE_Pin:
+		case BTN_OSC2_CYCLE_Pin:
 			mixer_cycle_wave(&mixer_OSC2_ws);
 			break;
 
-		case BUTTON_OSC3_CYCLE_Pin:
+		case BTN_OSC3_CYCLE_Pin:
 			mixer_cycle_wave(&mixer_OSC3_ws);
 			break;
 
-		case BUTTON_PHASE_MULT_Pin:
+		case BTN_PM_SYNC_Pin:
 //			mixer_PM_mult_cycle();
 			mixer_sync = !mixer_sync;
 			break;

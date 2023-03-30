@@ -13,7 +13,7 @@
 
 #define ENV_NS_MAX 64
 
-static const uint16_t ADSR_FACTOR = 1024;
+static const uint16_t ADSR_FACTOR = 2048;
 
 static float atc;
 static float dec;
