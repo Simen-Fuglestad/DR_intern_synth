@@ -12,12 +12,11 @@ static float fm2;							// FM modulation frequency of fm_osc2
 static float k1;							// kf = delta_f/amplitude, see wikipage on fm modulation
 static float k2;
 
-static const float FS = 44050; 						// sample rate
+static const float FS = 22050; 						// sample rate
 static const float FM_TS2 = 3.0f/MIXER_DREF;				// FM vibrato threshold=2xf0
 static const float FM_TS05 = 0.5f/MIXER_DREF;				// FM vibrato f=0.5xfx0
 static const float FM_BOUND = 0.01; 					// Ignore fm below
 static const float F_C0 = 16.352;					// Lowest permitted tone output in Hz
-static const float DF_RANGE = 1.0f/MIXER_DREF;				// Modulation depth
 
 // GENERAL PARAMTERES
 static const float TEMPER_RATIO = 1.0f/12.0f;		//12 tone temparement
@@ -40,6 +39,7 @@ float modulator_get_next(float mod_step, float *mod_table) {
 	float m = mod_table[(uint16_t)mod_step];
 	return m * N_WT_SAMPLES;
 }
+
 
 float modulator_update_fm_osc(int osc_n) {
 	float* f_osc;
@@ -70,7 +70,7 @@ uint16_t modulator_modu16(uint16_t modulator, uint16_t *carrier, uint16_t ref) {
 }
 
 float modulator_update_df() {
-	df = (float)mixer_get_df() * DF_RANGE; //get a separate slider for DF_DIV?
+	df = (float)mixer_get_df()/MIXER_DREF;
 	return df;
 }
 
@@ -80,6 +80,11 @@ void modulator_update_fm() {
 }
 
 float modulator_compute_k(int kn) {
+	/*
+	 * OBSOLOTE: Might be useful if converting to fixed point presentation
+	 * Premise: If amplitude is given digitally, we need to recompute sensitivity k for a given frequency deviation
+	 *
+	 */
 	float *k;
 	float *fmx;
 	switch(kn) {
@@ -168,7 +173,6 @@ float modulator_get_next_pm(float mod, float *wt, uint16_t ind, int pmn) {
 
 	bool pmf_en = mixer_get_sync();
 	if (pmf_en) {
-//		pm_mods[ind] = 0;
 		pm_mods[ind] += mod * pmf;
 	} else {
 		pm_mods[ind] += mod;

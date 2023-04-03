@@ -19,10 +19,10 @@ static float atc;
 static float dec;
 static float sus;
 static float rel;
-#define ENV_N 0x7f
-static env_t envelopes[ENV_N];
 
-static uint8_t env_index_map[ENV_N];
+static env_t envelopes[MIDI_CODE_RANGE];
+
+static uint8_t env_index_map[MIDI_CODE_RANGE];
 
 float slope_compute_next(float prev, float target, float gain);
 
@@ -62,8 +62,6 @@ int env_update_ADSR() {
 		sus_update();
 		rel_update();
 		return 0;
-	} else {
-		int br = 1;
 	}
 	return -1;
 }
@@ -115,11 +113,14 @@ void env_process_update() {
 	}
 }
 
-void env_process(uint8_t index) {
+void env_process_by_index(uint8_t index) {
 	env_t* env = &envelopes[env_index_map[index]];
+	env_process(env);
+}
+
+void env_process(env_t* env) {
 	if (env->rel_rdy) {
 		env->env_stage = RELEASE;
-//		return;
 	}
 
 	switch(env->env_stage) {

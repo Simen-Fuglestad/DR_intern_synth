@@ -31,7 +31,8 @@ void env_ADSR_init();
 void env_create(uint8_t output_ind, uint8_t midicode);
 env_t* env_map_get(uint8_t index);
 void env_release(uint8_t index);
-void env_process(uint8_t index);
+void env_process(env_t* env);
+void env_process_by_index(uint8_t index);
 void env_process_update();
 
 int env_update_ADSR();

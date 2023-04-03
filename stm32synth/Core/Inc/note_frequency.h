@@ -23,7 +23,7 @@
 #define ST_DIFF			ST_STEP_UP - ST_STEP_DOWN
 #define NOTE_C0_440HZ	16.352 		// use as basis for building 440hz lookup table
 
-#define FREQ_BASE 			8.176// c0 divided by 4
+#define FREQ_BASE 		8.176// c-1
 
 typedef enum {
 	SEMITONE_C, SEMITONE_C_SHARP, SEMITONE_D, SEMITONE_D_SHARP, SEMITONE_E,

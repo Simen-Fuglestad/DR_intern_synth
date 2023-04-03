@@ -45,7 +45,7 @@
 /* USER CODE BEGIN PD */
 #define REF_V_ANALOG 			2.90
 #define N_SAMPLES 				255
-#define USB_ENDPOINT_DESC_SIZE	0x09U //ignore warning, needed for MIDI compatibility
+//#define USB_ENDPOINT_DESC_SIZE	0x09U //ignore warning, needed for MIDI compatibility
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -70,8 +70,7 @@ TIM_HandleTypeDef htim7;
 uint16_t output_wave[N_WT_SAMPLES];
 
 
-#define I2S_OUT_N N_WT_SAMPLES
-#define I2S_OUT_N_HALF I2S_OUT_N/2
+#define N_WT_HALF (N_WT_SAMPLES/2)
 uint16_t i2s_out[N_WT_SAMPLES];
 
 bool i2s_tx_cplt = false;
@@ -150,7 +149,7 @@ int main(void)
 	wavetable_init_all();
 
 
-	HAL_StatusTypeDef tx_init_status = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)i2s_out, I2S_OUT_N);
+	HAL_StatusTypeDef tx_init_status = HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)i2s_out, N_WT_SAMPLES);
 
 	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_0);
 
@@ -177,52 +176,56 @@ int main(void)
 
 	while (1)
 	{
-		MIDI_Application();
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 
+
     /* USER CODE BEGIN 3 */
+	MIDI_Application();
+	MIDI_update_input(output_handler_get_steps());
+
 		if (i2s_tx_half) {
+			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
 			wave_shape = mixer_get_waveshape_out();
 
 			if (wave_shape == SINE) {
-				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, wavetable_get_ptr(SINE));
+				output_handler_outwave_update(i2s_out, 0, N_WT_HALF, wavetable_get_ptr(SINE));
 			}
 			else if (wave_shape == SQUARE) {
-				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, wavetable_get_ptr(SQUARE));
+				output_handler_outwave_update(i2s_out, 0, N_WT_HALF, wavetable_get_ptr(SQUARE));
 			}
 			else if (wave_shape == TRIANGLE) {
-				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, wavetable_get_ptr(TRIANGLE));
+				output_handler_outwave_update(i2s_out, 0, N_WT_HALF, wavetable_get_ptr(TRIANGLE));
 			}
 			else if (wave_shape == SAWTOOTH) {
-				output_handler_outwave_update(i2s_out, 0, I2S_OUT_N_HALF, wavetable_get_ptr(SAWTOOTH));
+				output_handler_outwave_update(i2s_out, 0, N_WT_HALF, wavetable_get_ptr(SAWTOOTH));
 			}
 			i2s_tx_half = false;
+			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 		}
 
 		else if (i2s_tx_cplt) {
 			wave_shape = mixer_get_waveshape_out();
 
 			if (wave_shape == SINE) {
-				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, wavetable_get_ptr(SINE));
+				output_handler_outwave_update(i2s_out, N_WT_HALF, N_WT_SAMPLES, wavetable_get_ptr(SINE));
 			}
 			else if (wave_shape == SQUARE) {
-				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, wavetable_get_ptr(SQUARE));
+				output_handler_outwave_update(i2s_out, N_WT_HALF, N_WT_SAMPLES, wavetable_get_ptr(SQUARE));
 			}
 			else if (wave_shape == TRIANGLE) {
-				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, wavetable_get_ptr(TRIANGLE));
+				output_handler_outwave_update(i2s_out, N_WT_HALF, N_WT_SAMPLES, wavetable_get_ptr(TRIANGLE));
 			}
 			else if (wave_shape == SAWTOOTH) {
-				output_handler_outwave_update(i2s_out, I2S_OUT_N_HALF, I2S_OUT_N, wavetable_get_ptr(SAWTOOTH));
+				output_handler_outwave_update(i2s_out, N_WT_HALF, N_WT_SAMPLES, wavetable_get_ptr(SAWTOOTH));
 			}
 			i2s_tx_cplt = false;
 		} else {
 			filter_update(); //NOTE: Filter needs to update BEFORE mixer
 			mixer_update();
-
-			MIDI_update_input(output_handler_get_steps());
 			env_update_ADSR();
 		}
+
 	}
   /* USER CODE END 3 */
 }
@@ -495,7 +498,7 @@ void MX_I2S3_Init(void)
   hi2s3.Init.Standard = I2S_STANDARD_PHILIPS;
   hi2s3.Init.DataFormat = I2S_DATAFORMAT_16B;
   hi2s3.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
-  hi2s3.Init.AudioFreq = I2S_AUDIOFREQ_44K;
+  hi2s3.Init.AudioFreq = I2S_AUDIOFREQ_22K;
   hi2s3.Init.CPOL = I2S_CPOL_LOW;
   hi2s3.Init.ClockSource = I2S_CLOCK_PLL;
   hi2s3.Init.FullDuplexMode = I2S_FULLDUPLEXMODE_DISABLE;

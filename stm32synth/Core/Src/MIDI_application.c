@@ -32,6 +32,10 @@ static const float OCT_R2				= OCT_U2 - OCT_D2;
 static uint8_t MIDI_input_keys[MODULATOR_MAX_VOICES];
 static uint8_t next_key_index;
 
+static uint8_t MIDI_input_codes[MODULATOR_MAX_VOICES];
+static uint8_t MIDI_input_indexes[MODULATOR_MAX_VOICES];
+static uint8_t input_index;
+
 static env_t envelopes[MODULATOR_MAX_VOICES];
 
 bool key_on_flag;
@@ -88,6 +92,7 @@ void MIDI_update_input(float* f_steps) {
 	float pitch_factor;
 	pitch_factor = OCT_D2 + OCT_R2 *((float)MIDI_ctrl_pitch/MIDI_PITCH_REF);
 	for (uint8_t i = 0; i < MODULATOR_MAX_VOICES; i++) {
+//		float fmidi = MIDI_key2f(MIDI_input_keys[i]);
 		float fmidi = MIDI_key2f(MIDI_input_keys[i]);
 		float f = fmidi/FREQ_BASE;
 		if (f < 1)
@@ -113,11 +118,17 @@ void MIDI_note_disable(uint8_t midi_code, int index) {
 void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi_data2) {
 	switch(midi_code) {
 	case MIDI_CODE_NOTE_OFF:
+//		MIDI_input_codes[input_index -1] = 0;
+//		MIDI_input_indexes[input_index] = 0;
+//		input_index--;
 		env_release(midi_data1);
 
 		break;
 
 	case MIDI_CODE_NOTE_ON:
+//		MIDI_input_codes[input_index] = midi_data1;
+//		MIDI_input_indexes[input_index] = midi_data;
+//		input_index++;
 		;
 		uint8_t next_free = 0;
 

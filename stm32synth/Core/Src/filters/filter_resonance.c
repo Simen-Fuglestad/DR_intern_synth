@@ -2,6 +2,7 @@
 #include <math.h>
 #include "OSC.h"
 #include "modulator.h"
+#include "envelope.h"
 
 static float fc;
 static uint16_t fs;
@@ -25,10 +26,12 @@ static float b2;
 static float y_buff[Y_LEN];
 static float x_buff[X_LEN];
 
+static env_t filter_env;
+
 void shift(float inp, float* buff, uint16_t buff_len);
 
 void filter_res_init() {
-    fs = 44100/4; //output updates every 4 samples
+    fs = 22050/2; //output updates every 2 samples
     Ts = 1.0f/fs;
     fc = 10000; //needed to init LFO
     r = 0.9;
