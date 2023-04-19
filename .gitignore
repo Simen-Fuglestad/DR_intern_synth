@@ -1,9 +1,11 @@
 /.metadata
 */DR_intern_synth/Debug
-*/DR_intern_synth/Drivers
+stm32synth/*.launch
+stm32synth/Debug
+stm32synth/.settings
 # /DR_intern_synth/Middlewares
 # /DR_intern_synth/USB_HOST
-*/DR_intern_synth/STM32F411VETX_FLASH.ld
+*/DR_intern_synth/stm32synth/STM32F411VETX_FLASH.ld
 */DR_intern_synth/STM32F411VETX_RAM.ld
 # /DR_intern_synth/.project
 */DR_intern_synth/.mxproject

@@ -12,7 +12,7 @@
 #include "MIDI_application.h"
 #include "usb_host.h"
 #include "mixer.h"
-#include "note_frequency.h"
+#include "modulator.h"
 #include "envelope.h"
 
 /* Private define ------------------------------------------------------------*/
@@ -23,23 +23,25 @@ uint8_t MIDI_RX_Buffer[RX_BUFF_SIZE]; // MIDI reception buffer
 
 static const uint16_t MIDI_PITCH_REF 	= 0x3fff; //maximum when midi data bytes are 0x7f and 0x7f
 static uint16_t MIDI_ctrl_pitch 		= 0x2000; //centered when midi data bytes are 0x00 0x40
-static const float OCT_D2 				= ST_STEP_DOWN * ST_STEP_DOWN;
-static const float OCT_U2				= ST_STEP_UP * ST_STEP_UP;
-static const float OCT_R2				= OCT_U2 - OCT_D2;
+static const float OCT_D2 				= NOTE_F_DOWN * NOTE_F_DOWN;
+static const float OCT_U2				= NOTE_F_UP * NOTE_F_UP;
+static const float OCT_R2				= NOTE_F_UP - NOTE_F_DOWN;
 
 #define N_MIDI_NOTES 127
 
 static uint8_t MIDI_input_keys[MODULATOR_MAX_VOICES];
 static uint8_t next_key_index;
 
-static uint8_t MIDI_input_codes[MODULATOR_MAX_VOICES];
-static uint8_t MIDI_input_indexes[MODULATOR_MAX_VOICES];
-static uint8_t input_index;
+//static uint8_t MIDI_input_codes[MODULATOR_MAX_VOICES];
+//static uint8_t MIDI_input_indexes[MODULATOR_MAX_VOICES];
+//static uint8_t input_index;
+
+static int on_event;
+static int off_event;
+
+static uint8_t next_free;
 
 static env_t envelopes[MODULATOR_MAX_VOICES];
-
-bool key_on_flag;
-bool key_off_flag;
 
 /* Private function prototypes -----------------------------------------------*/
 void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi_data2);
@@ -118,19 +120,13 @@ void MIDI_note_disable(uint8_t midi_code, int index) {
 void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi_data2) {
 	switch(midi_code) {
 	case MIDI_CODE_NOTE_OFF:
-//		MIDI_input_codes[input_index -1] = 0;
-//		MIDI_input_indexes[input_index] = 0;
-//		input_index--;
 		env_release(midi_data1);
 
 		break;
 
 	case MIDI_CODE_NOTE_ON:
-//		MIDI_input_codes[input_index] = midi_data1;
-//		MIDI_input_indexes[input_index] = midi_data;
-//		input_index++;
-		;
-		uint8_t next_free = 0;
+		on_event++;
+		next_free = 0;
 
 		for(uint8_t i = 0; i < MODULATOR_MAX_VOICES; ++i) {
 			uint8_t midi = MIDI_input_keys[i];
@@ -151,6 +147,7 @@ void ProcessReceivedMidiData(uint8_t midi_code, uint8_t midi_data1, uint8_t midi
 		env_create(next_key_index, midi_data1);
 
 		next_key_index = 0;
+
 		break;
 	case MIDI_CODE_POLY_KEY_PRESS: ; //currently not registering any from microkey S25
 	int test_poly_br = 10;

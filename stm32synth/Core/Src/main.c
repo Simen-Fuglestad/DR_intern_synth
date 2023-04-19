@@ -25,7 +25,6 @@
 
 #include "usb_host.h"
 #include "wavetable.h"
-#include "timer_utils.h"
 #include "MY_CS43L22.h"
 #include "filter.h"
 #include "modulator.h"
@@ -67,21 +66,14 @@ TIM_HandleTypeDef htim7;
 
 /* USER CODE BEGIN PV */
 
-uint16_t output_wave[N_WT_SAMPLES];
 
+#define I2S_OUT_N N_WT_SAMPLES
 
-#define N_WT_HALF (N_WT_SAMPLES/2)
-uint16_t i2s_out[N_WT_SAMPLES];
+#define I2S_OUT_NHALF N_WT_SAMPLES>>1
+uint16_t i2s_out[I2S_OUT_N];
 
 bool i2s_tx_cplt = false;
 bool i2s_tx_half = false;
-
-//note_t nf_map_440hz[N_OCTAVES * N_SEMITONES];
-
-uint16_t debounce_cnt = 0;
-uint16_t debounce_limit = 0x1FF;
-bool debounce_flag = false;
-
 
 /* USER CODE END PV */
 
@@ -179,45 +171,42 @@ int main(void)
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 
-
     /* USER CODE BEGIN 3 */
 	MIDI_Application();
 	MIDI_update_input(output_handler_get_steps());
 
 		if (i2s_tx_half) {
-			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_SET);
 			wave_shape = mixer_get_waveshape_out();
 
 			if (wave_shape == SINE) {
-				output_handler_outwave_update(i2s_out, 0, N_WT_HALF, wavetable_get_ptr(SINE));
+				output_handler_outwave_update(i2s_out, 0, I2S_OUT_NHALF, wavetable_get_ptr(SINE));
 			}
 			else if (wave_shape == SQUARE) {
-				output_handler_outwave_update(i2s_out, 0, N_WT_HALF, wavetable_get_ptr(SQUARE));
+				output_handler_outwave_update(i2s_out, 0, I2S_OUT_NHALF, wavetable_get_ptr(SQUARE));
 			}
 			else if (wave_shape == TRIANGLE) {
-				output_handler_outwave_update(i2s_out, 0, N_WT_HALF, wavetable_get_ptr(TRIANGLE));
+				output_handler_outwave_update(i2s_out, 0, I2S_OUT_NHALF, wavetable_get_ptr(TRIANGLE));
 			}
 			else if (wave_shape == SAWTOOTH) {
-				output_handler_outwave_update(i2s_out, 0, N_WT_HALF, wavetable_get_ptr(SAWTOOTH));
+				output_handler_outwave_update(i2s_out, 0, I2S_OUT_NHALF, wavetable_get_ptr(SAWTOOTH));
 			}
 			i2s_tx_half = false;
-			HAL_GPIO_WritePin(TEST_PIN_GPIO_Port, TEST_PIN_Pin, GPIO_PIN_RESET);
 		}
 
 		else if (i2s_tx_cplt) {
 			wave_shape = mixer_get_waveshape_out();
 
 			if (wave_shape == SINE) {
-				output_handler_outwave_update(i2s_out, N_WT_HALF, N_WT_SAMPLES, wavetable_get_ptr(SINE));
+				output_handler_outwave_update(i2s_out, I2S_OUT_NHALF, I2S_OUT_N, wavetable_get_ptr(SINE));
 			}
 			else if (wave_shape == SQUARE) {
-				output_handler_outwave_update(i2s_out, N_WT_HALF, N_WT_SAMPLES, wavetable_get_ptr(SQUARE));
+				output_handler_outwave_update(i2s_out, I2S_OUT_NHALF, I2S_OUT_N, wavetable_get_ptr(SQUARE));
 			}
 			else if (wave_shape == TRIANGLE) {
-				output_handler_outwave_update(i2s_out, N_WT_HALF, N_WT_SAMPLES, wavetable_get_ptr(TRIANGLE));
+				output_handler_outwave_update(i2s_out, I2S_OUT_NHALF, I2S_OUT_N, wavetable_get_ptr(TRIANGLE));
 			}
 			else if (wave_shape == SAWTOOTH) {
-				output_handler_outwave_update(i2s_out, N_WT_HALF, N_WT_SAMPLES, wavetable_get_ptr(SAWTOOTH));
+				output_handler_outwave_update(i2s_out, I2S_OUT_NHALF, I2S_OUT_N, wavetable_get_ptr(SAWTOOTH));
 			}
 			i2s_tx_cplt = false;
 		} else {

@@ -124,7 +124,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     GPIO_InitStruct.Pin = MIXER_OSC_PMF_Pin|MIXER_FILTER_FC_Pin|MIXER_FILTER_SWEEP_Pin|MIXER_GAIN_Pin
-                          |MIXER_OSC2_FM_Pin|MIXER_ATTACK_Pin|MIXER_DECAY_Pin;
+                          |MIXER_PHASE_SHIFT_Pin|MIXER_ATTACK_Pin|MIXER_DECAY_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -199,7 +199,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
                           |MIXER_OSC2_PM_BETA_Pin);
 
     HAL_GPIO_DeInit(GPIOA, MIXER_OSC_PMF_Pin|MIXER_FILTER_FC_Pin|MIXER_FILTER_SWEEP_Pin|MIXER_GAIN_Pin
-                          |MIXER_OSC2_FM_Pin|MIXER_ATTACK_Pin|MIXER_DECAY_Pin);
+                          |MIXER_PHASE_SHIFT_Pin|MIXER_ATTACK_Pin|MIXER_DECAY_Pin);
 
     HAL_GPIO_DeInit(GPIOB, MIXER_SUSTAIN_Pin|MIXER_RELEASE_Pin);
 

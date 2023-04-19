@@ -1,6 +1,5 @@
 #include "filter.h"
 #include <math.h>
-#include "OSC.h"
 #include "modulator.h"
 #include "envelope.h"
 
@@ -19,7 +18,6 @@ static float b0;
 static float b1;
 static float b2;
 
-
 #define Y_LEN 2
 #define X_LEN 3
 
@@ -28,13 +26,17 @@ static float x_buff[X_LEN];
 
 static env_t filter_env;
 
+env_t filter_get_env() {
+	return filter_env;
+}
+
 void shift(float inp, float* buff, uint16_t buff_len);
 
 void filter_res_init() {
     fs = 22050/2; //output updates every 2 samples
     Ts = 1.0f/fs;
-    fc = 10000; //needed to init LFO
-    r = 0.9;
+    r = 0.9; //tight resonance peak that still yields frequencies in close proximity
+    fc = 1000;
 }
 
 void shift(float inp, float* buff, uint16_t buff_len) {
@@ -46,23 +48,18 @@ void shift(float inp, float* buff, uint16_t buff_len) {
 
 float filter_res_update(float in) {
     uint16_t mixer_fc = mixer_get_filter_fc_low();
-    uint16_t sweep = mixer_get_filter_fc_high()/0xF;
+    float sweep = (float)mixer_get_filter_fc_high()/0xff;
 
-    float sweepf = modulator_get_next(sweep, wavetable_get_ptr(SINE))/0x1FF;
+    float sweepf = modulator_get_next(sweep, wavetable_get_ptr(SINE)) * N_WT_SAMPLES;
     float* wt = wavetable_get_ptr(SINE);
     LFO_tracker += sweepf;
     if (LFO_tracker >= N_WT_SAMPLES) {
     	LFO_tracker -= N_WT_SAMPLES;
+    } else if (LFO_tracker < 0) {
+    	LFO_tracker += N_WT_SAMPLES;
     }
     fc = mixer_fc * wt[(uint16_t)LFO_tracker];
-//    float next
-//    float* wt = wavetable_get_ptr(SINE);
 
-//    float osc = wt[(uint16_t)LF_TRACKER];
-//    fc = fcf * sweepf;
-
-//    fc = modulator_get_next(fabs(fc) * sweepf, wavetable_get_ptr(SINE));
-    //fc = OSC_apply(sweep, mixer_fc, LFO_TREMOLO);
     shift(in, x_buff, X_LEN);
     float next = filter_res_get_next();
     shift(next, y_buff, Y_LEN);
@@ -87,12 +84,10 @@ float filter_res_get_next() {
 
 void filter_res_coeff_update() {
 
-    float tmp_fc_ts = fc*Ts;
     a1 = -2.0f * r * cosf(2.0f * 3.141f * fc * Ts);
     a2 = r*r;
 
     b0 = (1.0f - r*r)/2.0f;
-    // b0 = 1;
     b1 = 0;
     b2 = -b0;
 }
