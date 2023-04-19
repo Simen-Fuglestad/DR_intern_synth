@@ -27,8 +27,6 @@ static bool mixer_filter_en;
 static bool mixer_OSC1_en;
 static bool mixer_OSC2_en;
 
-static OSC_mode_enum mixer_OSC1_mode;
-static OSC_mode_enum mixer_OSC2_mode;
 static ws_enum mixer_OSC1_ws;
 static ws_enum mixer_OSC2_ws;
 static ws_enum mixer_OSC3_ws;
@@ -43,8 +41,6 @@ void mixer_LFO_toggle(void);
 void mixer_LFO2_toggle(void);
 
 static bool mixer_sync;
-
-static int pm_mult_idx;
 
 static const uint16_t ADC_HYSTERESIS_MAX_LIM = 20;
 
@@ -168,9 +164,9 @@ uint16_t mixer_get_OSC1_FM() {
 	}
 }
 
-uint16_t mixer_get_OSC2_FM() {
-	if (mixer_tmp[OSC2_FM_CHANNEL] >= MIXER_SOFT_CAP)
-		return mixer_tmp[OSC2_FM_CHANNEL] - MIXER_SOFT_CAP;
+uint16_t mixer_get_phase_shift() {
+	if (mixer_tmp[PHASE_SHIFT_CHANNEL] >= MIXER_SOFT_CAP)
+		return mixer_tmp[PHASE_SHIFT_CHANNEL] - MIXER_SOFT_CAP;
 	else
 		return 0;
 }
@@ -215,14 +211,6 @@ ws_enum mixer_get_waveshape_out() {
 	return waveshape_out;
 }
 
-OSC_mode_enum mixer_get_OSC1_mode() {
-	return mixer_OSC1_mode;
-}
-
-OSC_mode_enum mixer_get_OSC2_mode() {
-	return mixer_OSC2_mode;
-}
-
 bool mixer_get_filter_en() {
 	return mixer_filter_en;
 }
@@ -248,21 +236,6 @@ void mixer_cycle_wave(ws_enum* w_shape_ptr) {
 		break;
 	default:
 		*w_shape_ptr = SINE;
-		break;
-	}
-}
-
-void mixer_cycle_OSC_mode(OSC_mode_enum* lfo_mode_ptr) {
-	switch(*lfo_mode_ptr) {
-	case LFO_TREMOLO:
-		*lfo_mode_ptr = LFO_PITCH;
-		break;
-	case LFO_PITCH:
-		*lfo_mode_ptr = LFO_FLUTTER;
-		break;
-	case LFO_FLUTTER:
-		*lfo_mode_ptr = LFO_TREMOLO;
-	default:
 		break;
 	}
 }
@@ -319,7 +292,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 			break;
 
 		case BTN_PM_SYNC_Pin:
-//			mixer_PM_mult_cycle();
 			mixer_sync = !mixer_sync;
 			break;
 

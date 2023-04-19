@@ -8,23 +8,9 @@
 #ifndef INC_WAVETABLE_H_
 #define INC_WAVETABLE_H_
 
-/*
- * Collection of methods and helper constants to create wave tables of various shapes.
- */
-#define REF_V_DIGITAL_HEADPHONE 0xFFF
-#define REF_V_DIGITAL_SPEAKER 0xFFFF
-#define I2S_SAMPLE_RATE 48000
-#define MAX_SAMPLE_SIZE_F (I2S_SAMPLE_RATE)/16.352
-
-//#define N_WT_SAMPLES 3493
-
-//#define N_WT_SAMPLES 2935 	//48khz mono
-//#define N_WT_SAMPLES 5872 	//48khz stereo
-//#define MAX_SAMPLE_SIZE 2691 	//44khz mono
-#define N_WT_SAMPLES 2692 		//44.05Khz stereo
+#define N_WT_SAMPLES 2692
 
 #include <stdint.h>
-//#include "note_frequency.h"
 
 typedef enum {
 	SINE, SQUARE, TRIANGLE, SAWTOOTH

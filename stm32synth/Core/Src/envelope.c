@@ -20,9 +20,11 @@ static float dec;
 static float sus;
 static float rel;
 
-static env_t envelopes[MIDI_CODE_RANGE];
+#define ENV_N MIDI_CODE_RANGE
 
-static uint8_t env_index_map[MIDI_CODE_RANGE];
+static env_t envelopes[ENV_N];
+
+static uint8_t env_index_map[ENV_N];
 
 float slope_compute_next(float prev, float target, float gain);
 
@@ -33,20 +35,6 @@ void atc_update();
 void dec_update();
 void sus_update();
 void rel_update();
-
-void draw_slope(float* slope, int slope_len, float start_val, float target, float gain) {
-	slope[0] = start_val;
-	for (int i = 1; i < slope_len; i++) {
-		slope[i] = slope_compute_next(slope[i-1], target, gain);
-	}
-}
-
-void draw_lin_slope(float* slope, int len, float start, float target) {
-	float step_size = (target - start)/len;
-	for (uint16_t i = 0; i < len; ++i) {
-		slope[i] = start + step_size * i;
-	}
-}
 
 void env_ADSR_init() {
 	atc_update();
@@ -67,7 +55,6 @@ int env_update_ADSR() {
 }
 
 void atc_update() {
-	// atc = (float)mixer_get_attack()/MIXER_DREF;
 	atc = (float)mixer_get_attack()/(MIXER_DREF * ADSR_FACTOR);
 }
 
@@ -106,7 +93,7 @@ void env_release(uint8_t midi_index) {
 
 void env_process_update() {
 	static uint8_t index;
-	env_process(index);
+	env_process_by_index(index);
 	index++;
 	if (index >= 10) { //nr of inputs
 		index = 0;
@@ -126,6 +113,7 @@ void env_process(env_t* env) {
 	switch(env->env_stage) {
 
 	case ENV_IDLE:
+//		env->env_stage = ATTACK;
 		break;
 
 	case ATTACK:
@@ -179,8 +167,25 @@ void env_process(env_t* env) {
 	}
 }
 
+/*
+ * Slope functions are deprecated
+ */
+void draw_slope(float* slope, int slope_len, float start_val, float target, float gain) {
+	slope[0] = start_val;
+	for (int i = 1; i < slope_len; i++) {
+		slope[i] = slope_compute_next(slope[i-1], target, gain);
+	}
+}
+
 float slope_compute_next(float prev, float target, float gain) {
 	return target * gain + (1.0f - gain) * prev;
+}
+
+void draw_lin_slope(float* slope, int len, float start, float target) {
+	float step_size = (target - start)/len;
+	for (uint16_t i = 0; i < len; ++i) {
+		slope[i] = start + step_size * i;
+	}
 }
 
 

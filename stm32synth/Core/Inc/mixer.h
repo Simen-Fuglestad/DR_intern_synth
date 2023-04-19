@@ -8,8 +8,6 @@
 #ifndef INC_MIXER_H_
 #define INC_MIXER_H_
 
-
-#include <OSC.h>
 #include <stdbool.h>
 #include "main.h"
 #include "wavetable.h"
@@ -27,7 +25,7 @@
 #define FILTER_FC_CHANNEL		0
 #define FILTER_SWEEP_CHANNEL	1
 #define VOLUME_CHANNEL 			2
-#define OSC2_FM_CHANNEL			3
+#define PHASE_SHIFT_CHANNEL		3
 #define ATTACK_CHANNEL 			4
 #define DECAY_CHANNEL			5
 #define SUSTAIN_CHANNEL			6
@@ -56,7 +54,7 @@ uint16_t mixer_get_duty_cycle(void);
 uint16_t mixer_get_PWM(void);
 uint16_t mixer_get_OSC1_FM(void);
 uint16_t mixer_get_df(void);
-uint16_t mixer_get_OSC2_FM(void);
+uint16_t mixer_get_phase_shift(void);
 uint16_t mixer_get_pm_beta1(void);
 uint16_t mixer_get_pm_beta2(void);
 uint16_t mixer_get_pmf(void);
@@ -64,11 +62,6 @@ bool mixer_get_sync();
 
 ws_enum mixer_get_OSC_ws(uint8_t n);
 ws_enum mixer_get_waveshape_out(void);
-//wave_out_mode_enum mixer_get_wave_out_mode(void);
-
-OSC_mode_enum mixer_get_OSC1_mode(void);
-OSC_mode_enum mixer_get_OSC2_mode(void);
-OSC_mode_enum mixer_get_OSC3_mode();
 
 bool mixer_get_filter_en(void);
 bool mixer_is_PWM_en(void);

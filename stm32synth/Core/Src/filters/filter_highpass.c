@@ -5,6 +5,9 @@
  *      Author: sfs
  */
 
+/*
+ * NOTE: OBSOLETE. This filter uses old unsigned implementation method and will not work as is
+ */
 
 #include "filter.h"
 
